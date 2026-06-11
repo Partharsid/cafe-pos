@@ -548,22 +548,53 @@ export default function MenuManagement() {
           </div>
         )}
         <GlassCard className="p-10 sm:p-16 flex flex-col items-center text-center">
-          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-            <Coffee className="w-10 h-10 text-primary" />
-          </div>
-          <h2 className="text-xl font-bold mb-2">No categories yet</h2>
-          <p className="text-muted-foreground text-sm max-w-sm mb-6">
-            Create your first category to start organizing your menu items. Categories like "Beverages", "Snacks", or "Meals".
-          </p>
-          <button
-            onClick={() => {
-              setShowAddCategory(true);
-              setEditingCategory({ name: "" });
-            }}
-            className="neon-glow flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm min-h-[44px]"
-          >
-            <Plus className="w-4 h-4" /> Create First Category
-          </button>
+          {showAddCategory ? (
+            <div className="w-full max-w-sm">
+              <h2 className="text-lg font-bold mb-4">Create your first category</h2>
+              <div className="flex gap-2">
+                <input
+                  value={editingCategory?.name || ""}
+                  onChange={(e) => setEditingCategory((p) => ({ ...p, name: e.target.value }))}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveCategory()}
+                  className="flex-1 px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
+                  placeholder="e.g. Beverages, Snacks, Meals"
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveCategory}
+                  disabled={working}
+                  className="neon-glow px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm min-h-[44px] disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => { setShowAddCategory(false); setEditingCategory(null); }}
+                  className="px-4 py-2.5 rounded-lg border border-border text-sm min-h-[44px]"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                <Coffee className="w-10 h-10 text-primary" />
+              </div>
+              <h2 className="text-xl font-bold mb-2">No categories yet</h2>
+              <p className="text-muted-foreground text-sm max-w-sm mb-6">
+                Create your first category to start organizing your menu items. Categories like "Beverages", "Snacks", or "Meals".
+              </p>
+              <button
+                onClick={() => {
+                  setShowAddCategory(true);
+                  setEditingCategory({ name: "" });
+                }}
+                className="neon-glow flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm min-h-[44px]"
+              >
+                <Plus className="w-4 h-4" /> Create First Category
+              </button>
+            </>
+          )}
         </GlassCard>
       </div>
     );
