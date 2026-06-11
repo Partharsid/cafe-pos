@@ -17,6 +17,7 @@ import {
   Package,
   Store,
   Percent,
+  Users,
   ChefHat,
   X,
   ChevronLeft,
@@ -42,6 +43,12 @@ const navItems: NavItem[] = [
     href: "/admin/cafes",
     label: "Manage Cafes",
     icon: <Store className="w-5 h-5" />,
+    roles: ["super_admin"],
+  },
+  {
+    href: "/admin/users",
+    label: "Staff Management",
+    icon: <Users className="w-5 h-5" />,
     roles: ["super_admin"],
   },
   {
@@ -111,6 +118,7 @@ const bottomTabMap: Record<string, { href: string; label: string; icon: React.Re
   super_admin: [
     { href: "/admin/dashboard", label: "Home", icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: "/admin/cafes", label: "Cafes", icon: <Store className="w-5 h-5" /> },
+    { href: "/admin/users", label: "Staff", icon: <Users className="w-5 h-5" /> },
     { href: "/admin/royalty", label: "Royalty", icon: <Percent className="w-5 h-5" /> },
     { href: "/kds", label: "KDS", icon: <ChefHat className="w-5 h-5" /> },
   ],
