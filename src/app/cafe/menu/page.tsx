@@ -19,6 +19,9 @@ import toast from "react-hot-toast";
 
 export default function MenuManagement() {
   const { profile } = useAuthStore();
+  const isSuperAdmin = profile?.role === "super_admin";
+  const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
+  const [cafes, setCafes] = useState<{id:string, name:string}[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +30,15 @@ export default function MenuManagement() {
   const [showAddCat, setShowAddCat] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const supabase = createClient();
-  const cafeId = profile?.cafe_id;
+  const cafeId = isSuperAdmin ? selectedCafeId : profile?.cafe_id;
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      supabase.from("cafes").select("id, name").eq("is_active", true).then(({data}) => {
+        if (data) { setCafes(data); if (data.length > 0) setSelectedCafeId(data[0].id); }
+      });
+    }
+  }, [isSuperAdmin]);
 
   const fetchData = async () => {
     if (!cafeId) return;
@@ -173,6 +184,21 @@ export default function MenuManagement() {
           </button>
         </div>
       </div>
+
+      {isSuperAdmin && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Cafe:</span>
+          <select
+            value={selectedCafeId || ""}
+            onChange={(e) => setSelectedCafeId(e.target.value)}
+            className="px-3 py-2 rounded-lg bg-muted border border-border text-sm outline-none"
+          >
+            {cafes.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {(showAddCat || editingCat) && (
         <GlassCard>

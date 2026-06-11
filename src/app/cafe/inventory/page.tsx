@@ -11,11 +11,22 @@ import toast from "react-hot-toast";
 
 export default function InventoryPage() {
   const { profile } = useAuthStore();
+  const isSuperAdmin = profile?.role === "super_admin";
+  const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
+  const [cafes, setCafes] = useState<{id:string, name:string}[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingStock, setEditingStock] = useState<Record<string, number>>({});
   const supabase = createClient();
-  const cafeId = profile?.cafe_id;
+  const cafeId = isSuperAdmin ? selectedCafeId : profile?.cafe_id;
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      supabase.from("cafes").select("id, name").eq("is_active", true).then(({data}) => {
+        if (data) { setCafes(data); if (data.length > 0) setSelectedCafeId(data[0].id); }
+      });
+    }
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     if (!cafeId) return;
@@ -83,6 +94,21 @@ export default function InventoryPage() {
           Track and update item stock levels
         </p>
       </div>
+
+      {isSuperAdmin && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Cafe:</span>
+          <select
+            value={selectedCafeId || ""}
+            onChange={(e) => setSelectedCafeId(e.target.value)}
+            className="px-3 py-2 rounded-lg bg-muted border border-border text-sm outline-none"
+          >
+            {cafes.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <GlassCard>

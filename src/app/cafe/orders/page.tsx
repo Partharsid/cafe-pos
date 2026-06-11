@@ -20,11 +20,22 @@ const statusColors: Record<string, "default" | "secondary" | "accent" | "success
 
 export default function OrdersPage() {
   const { profile } = useAuthStore();
+  const isSuperAdmin = profile?.role === "super_admin";
+  const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
+  const [cafes, setCafes] = useState<{id:string, name:string}[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const supabase = createClient();
-  const cafeId = profile?.cafe_id;
+  const cafeId = isSuperAdmin ? selectedCafeId : profile?.cafe_id;
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      supabase.from("cafes").select("id, name").eq("is_active", true).then(({data}) => {
+        if (data) { setCafes(data); if (data.length > 0) setSelectedCafeId(data[0].id); }
+      });
+    }
+  }, [isSuperAdmin]);
 
   const fetchOrders = async () => {
     if (!cafeId) return;
@@ -86,6 +97,21 @@ export default function OrdersPage() {
         <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
         <p className="text-muted-foreground mt-1">View and manage orders</p>
       </div>
+
+      {isSuperAdmin && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Cafe:</span>
+          <select
+            value={selectedCafeId || ""}
+            onChange={(e) => setSelectedCafeId(e.target.value)}
+            className="px-3 py-2 rounded-lg bg-muted border border-border text-sm outline-none"
+          >
+            {cafes.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="flex gap-2 overflow-x-auto pb-2">
         {["all", "pending", "preparing", "ready", "completed", "cancelled"].map(
