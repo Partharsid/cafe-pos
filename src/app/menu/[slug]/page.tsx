@@ -23,6 +23,7 @@ import {
   Send,
   X,
   ChevronUp,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -32,6 +33,8 @@ interface CartItem {
   item: MenuItem;
   quantity: number;
   notes: string;
+  modifiers?: { groupName: string; selectedOptions: { name: string; price_modifier: number }[] }[];
+  unitPrice?: number;
 }
 
 export default function CafeMenuPage({
@@ -62,6 +65,13 @@ export default function CafeMenuPage({
     searchParams.get("table") || ""
   );
   const [placingOrder, setPlacingOrder] = useState(false);
+  const [modifierPopup, setModifierPopup] = useState<{
+    item: MenuItem;
+    modifiers: any[];
+    selections: Record<string, string[]>;
+  } | null>(null);
+  const [estimatedWait, setEstimatedWait] = useState<number | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const supabase = createClient();
 
@@ -113,7 +123,22 @@ export default function CafeMenuPage({
     ? items.filter((i) => i.category_id === selectedCat)
     : items;
 
-  const addToCart = (item: MenuItem) => {
+  const addToCart = async (item: MenuItem) => {
+    const { data: mods } = await supabase
+      .from("item_modifiers")
+      .select("*")
+      .eq("menu_item_id", item.id)
+      .order("display_order");
+
+    if (mods && mods.length > 0) {
+      const selections: Record<string, string[]> = {};
+      mods.forEach((m: any) => {
+        selections[m.id] = m.type === "select" ? [m.options[0]?.name || ""] : [];
+      });
+      setModifierPopup({ item, modifiers: mods, selections });
+      return;
+    }
+
     setCart((prev) => {
       const existing = prev.find((ci) => ci.item.id === item.id);
       if (existing)
@@ -122,7 +147,7 @@ export default function CafeMenuPage({
             ? { ...ci, quantity: ci.quantity + 1 }
             : ci
         );
-      return [...prev, { item, quantity: 1, notes: "" }];
+      return [{ item, quantity: 1, notes: "", unitPrice: item.price }];
     });
   };
 
@@ -143,8 +168,9 @@ export default function CafeMenuPage({
   };
 
   const getCartTotal = () =>
-    cart.reduce((s, ci) => s + ci.item.price * ci.quantity, 0);
+    cart.reduce((s, ci) => s + (ci.unitPrice ?? ci.item.price) * ci.quantity, 0);
   const getCartCount = () => cart.reduce((s, ci) => s + ci.quantity, 0);
+  const taxPct = Number(cafe?.tax_percentage || 5) / 100;
 
   const handlePlaceOrder = async () => {
     if (!customerName.trim() || !customerPhone.trim()) {
@@ -163,7 +189,8 @@ export default function CafeMenuPage({
     setPlacingOrder(true);
     try {
       const subtotal = getCartTotal();
-      const tax = subtotal * 0.05;
+const taxPct = Number((cafe as any)?.tax_percentage || 5) / 100;
+      const tax = subtotal * taxPct;
       const royaltyPct = Number(cafe?.royalty_percentage || 0);
       const royaltyAmount = (subtotal * royaltyPct) / 100;
       const total = subtotal + tax;
@@ -187,14 +214,18 @@ export default function CafeMenuPage({
 
       if (error) throw error;
 
-      const orderItems = cart.map((ci) => ({
+      const orderItems = cart.map((ci) => {
+        const unitPrice = ci.unitPrice ?? ci.item.price;
+        return {
         order_id: order.id,
         menu_item_id: ci.item.id,
         quantity: ci.quantity,
-        unit_price: ci.item.price,
-        subtotal: ci.item.price * ci.quantity,
+        unit_price: unitPrice,
+        subtotal: unitPrice * ci.quantity,
         notes: ci.notes || null,
-      }));
+        modifiers: ci.modifiers || null,
+        };
+      });
 
       await supabase.from("order_items").insert(orderItems);
 
@@ -216,6 +247,19 @@ export default function CafeMenuPage({
       setShowCart(false);
       setCustomerName("");
       setCustomerPhone("");
+
+      // Calculate estimated wait time
+      const { data: pendingOrders } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("cafe_id", cafe?.id)
+        .in("status", ["pending", "preparing"]);
+
+      const avgPrepTime = Number(cafe?.avg_prep_time_minutes ?? 15);
+      const ordersAhead = (pendingOrders?.length || 0);
+      const wait = Math.max(ordersAhead * avgPrepTime, avgPrepTime);
+      setEstimatedWait(wait);
+      setShowConfirmation(true);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -342,6 +386,93 @@ export default function CafeMenuPage({
         </div>
       </div>
 
+      {/* Modifier Selection Popup */}
+      {modifierPopup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="glass-card rounded-2xl p-6 max-w-sm w-[90vw] animate-scale-in">
+            <h3 className="font-bold text-lg mb-4">{modifierPopup.item.name}</h3>
+            <div className="space-y-4">
+              {modifierPopup.modifiers.map((mod: any) => (
+                <div key={mod.id}>
+                  <p className="text-sm font-semibold text-muted-foreground mb-2">{mod.name}</p>
+                  <div className="space-y-1">
+                    {mod.options.map((opt: any) => {
+                      const isSelected = modifierPopup.selections[mod.id]?.includes(opt.name);
+                      return (
+                        <button
+                          key={opt.name}
+                          onClick={() => {
+                            const selections = { ...modifierPopup.selections };
+                            if (mod.type === "select") {
+                              selections[mod.id] = [opt.name];
+                            } else {
+                              const current = selections[mod.id] || [];
+                              selections[mod.id] = current.includes(opt.name)
+                                ? current.filter((n: string) => n !== opt.name)
+                                : [...current, opt.name];
+                            }
+                            setModifierPopup({ ...modifierPopup, selections });
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+                            isSelected
+                              ? "bg-primary/20 text-primary border border-primary/30"
+                              : "bg-muted/60 text-muted-foreground border border-border hover:border-primary/30"
+                          }`}
+                        >
+                          <span>{opt.name}</span>
+                          {opt.price_modifier > 0 && (
+                            <span className="text-xs">+₹{opt.price_modifier}</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setModifierPopup(null)}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-border text-sm min-h-[44px]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const modifiers = modifierPopup.modifiers.map((m: any) => ({
+                    groupName: m.name,
+                    selectedOptions: (modifierPopup.selections[m.id] || []).map((name: string) => {
+                      const opt = m.options.find((o: any) => o.name === name);
+                      return { name, price_modifier: opt?.price_modifier || 0 };
+                    }),
+                  }));
+                  const modifierPrice = modifiers.reduce(
+                    (sum, m) => sum + m.selectedOptions.reduce((s, o) => s + o.price_modifier, 0),
+                    0
+                  );
+                  setCart((prev) => {
+                    const existing = prev.find(
+                      (ci) => ci.item.id === modifierPopup.item.id && JSON.stringify(ci.modifiers) === JSON.stringify(modifiers)
+                    );
+                    if (existing)
+                      return prev.map((ci) =>
+                        ci.item.id === modifierPopup.item.id && JSON.stringify(ci.modifiers) === JSON.stringify(modifiers)
+                          ? { ...ci, quantity: ci.quantity + 1 }
+                          : ci
+                      );
+                    return [...prev, { item: modifierPopup.item, quantity: 1, notes: "", modifiers, unitPrice: modifierPopup.item.price + modifierPrice }];
+                  });
+                  setModifierPopup(null);
+                }}
+                className="flex-1 neon-glow px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm min-h-[44px]"
+              >
+                Add to Cart
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Cart Bottom Sheet (Mobile) / Drawer (Desktop) */}
       {showCart && (
         <>
@@ -376,7 +507,9 @@ export default function CafeMenuPage({
                   Cart is empty
                 </p>
               ) : (
-                cart.map((ci) => (
+                cart.map((ci) => {
+                  const unitPrice = ci.unitPrice ?? ci.item.price;
+                  return (
                   <div
                     key={ci.item.id}
                     className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
@@ -385,6 +518,11 @@ export default function CafeMenuPage({
                       <p className="text-sm font-medium truncate">
                         {ci.item.name}
                       </p>
+                      {ci.modifiers && ci.modifiers.length > 0 && (
+                        <p className="text-[10px] text-primary mt-0.5">
+                          {ci.modifiers.map((m) => m.selectedOptions.map((o) => o.name).join(", ")).join(" | ")}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <button
                           onClick={() =>
@@ -409,11 +547,12 @@ export default function CafeMenuPage({
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-semibold">
-                        ₹{(ci.item.price * ci.quantity).toFixed(0)}
+                        ₹{(unitPrice * ci.quantity).toFixed(0)}
                       </p>
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -424,13 +563,13 @@ export default function CafeMenuPage({
                   <span>₹{getCartTotal().toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax (5%)</span>
-                  <span>₹{(getCartTotal() * 0.05).toFixed(2)}</span>
+                  <span className="text-muted-foreground">Tax ({(taxPct * 100).toFixed(0)}%)</span>
+                  <span>₹{(getCartTotal() * taxPct).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
                   <span className="text-primary">
-                    ₹{(getCartTotal() * 1.05).toFixed(2)}
+                    ₹{(getCartTotal() * (1 + taxPct)).toFixed(2)}
                   </span>
                 </div>
 
@@ -531,6 +670,36 @@ export default function CafeMenuPage({
                 )}
               </div>
             )}
+          </div>
+        </>
+      )}
+
+      {/* Order Confirmation with Estimated Wait */}
+      {showConfirmation && estimatedWait !== null && (
+        <>
+          <div className="fixed inset-0 bg-black/60 z-50" onClick={() => setShowConfirmation(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="glass-card rounded-2xl p-6 max-w-sm w-full animate-scale-in text-center">
+              <div className="w-16 h-16 rounded-full bg-chart-4/20 mx-auto mb-4 flex items-center justify-center">
+                <Clock className="w-8 h-8 text-chart-4" />
+              </div>
+              <h2 className="text-xl font-bold mb-2">Order Placed!</h2>
+              <p className="text-3xl font-extrabold text-primary mb-1">
+                ~{estimatedWait} min
+              </p>
+              <p className="text-sm text-muted-foreground mb-1">
+                Estimated wait time
+              </p>
+              <p className="text-xs text-muted-foreground/60 mb-6">
+                You will be notified when your order is ready
+              </p>
+              <button
+                onClick={() => setShowConfirmation(false)}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm min-h-[48px] neon-glow"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </>
       )}

@@ -27,10 +27,12 @@ import {
   Calendar,
   Zap,
   FileDown,
+  MessageSquare,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format, isToday, isYesterday, startOfWeek, startOfDay, endOfDay } from "date-fns";
 import toast from "react-hot-toast";
+import { XCircle } from "lucide-react";
 
 const ORDER_STATUSES = ["all", "pending", "preparing", "ready", "completed", "cancelled"] as const;
 const ORDER_TYPES = ["all", "dine_in", "takeaway", "qr"] as const;
@@ -77,6 +79,9 @@ export default function OrdersPage() {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [animatingOrderId, setAnimatingOrderId] = useState<string | null>(null);
+  const [cancelDialog, setCancelDialog] = useState<{ orderId: string; open: boolean }>({ orderId: "", open: false });
+  const [cancelReason, setCancelReason] = useState("Customer Request");
+  const [cancelCustomReason, setCancelCustomReason] = useState("");
   const pageLoadTimeRef = useRef<string>(new Date().toISOString());
   const supabase = createClient();
   const cafeId = isSuperAdmin ? selectedCafeId : profile?.cafe_id;
@@ -147,6 +152,28 @@ export default function OrdersPage() {
       setAnimatingOrderId(null);
     } else {
       toast.success(`Order ${newStatus}`);
+      setTimeout(() => setAnimatingOrderId(null), 400);
+      fetchOrders();
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    const { orderId } = cancelDialog;
+    if (!orderId) return;
+    const reason = cancelReason === "Other" ? cancelCustomReason : cancelReason;
+    setAnimatingOrderId(orderId);
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "cancelled", cancellation_reason: reason, payment_status: "refunded" })
+      .eq("id", orderId);
+    if (error) {
+      toast.error(error.message);
+      setAnimatingOrderId(null);
+    } else {
+      toast.success("Order cancelled");
+      setCancelDialog({ orderId: "", open: false });
+      setCancelReason("Customer Request");
+      setCancelCustomReason("");
       setTimeout(() => setAnimatingOrderId(null), 400);
       fetchOrders();
     }
@@ -611,6 +638,15 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
                           {order.customer_name}
                         </span>
                       )}
+                      {order.notes && (
+                        <span
+                          className="text-xs text-muted-foreground flex items-center gap-1"
+                          title={order.notes}
+                        >
+                          <MessageSquare className="w-3 h-3 text-primary/60" />
+                          <span className="truncate max-w-[120px] text-primary/80">{order.notes}</span>
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -633,8 +669,13 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
                 onClick={(e) => { e.stopPropagation(); toggleExpand(order.id); }}
                 className="flex items-center justify-between w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
               >
-                <span>
+                <span className="flex items-center gap-1.5">
                   {order.order_items?.length || 0} item{(order.order_items?.length || 0) !== 1 ? "s" : ""}
+                  {(order.order_items?.filter((oi: any) => oi.notes).length || 0) > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-chart-5/20 text-chart-5 text-[10px] font-bold">
+                      {order.order_items.filter((oi: any) => oi.notes).length} notes
+                    </span>
+                  )}
                 </span>
                 {expandedOrders.has(order.id) ? (
                   <ChevronUp className="w-3.5 h-3.5" />
@@ -651,8 +692,13 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
                     : order.order_items.slice(0, 2)
                   ).map((oi: any, i: number) => (
                     <div key={i} className="flex justify-between text-xs">
-                      <span className="text-muted-foreground truncate mr-2">
+                      <span className="text-muted-foreground truncate mr-2 flex items-center gap-1">
                         {oi.quantity}x {oi.menu_item?.name || "Item"}
+                        {oi.notes && (
+                          <span className="text-chart-5/80 text-[10px]" title={oi.notes}>
+                            <MessageSquare className="w-2.5 h-2.5 inline" />
+                          </span>
+                        )}
                       </span>
                       <span className="shrink-0">₹{Number(oi.subtotal).toFixed(0)}</span>
                     </div>
@@ -692,6 +738,15 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
                   >
                     <CheckCircle className="w-3.5 h-3.5" /> Complete
                   </button>
+                  {order.status === "pending" && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCancelDialog({ orderId: order.id, open: true }); setCancelReason("Customer Request"); setCancelCustomReason(""); }}
+                      className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium bg-destructive/15 text-destructive hover:bg-destructive/25 transition-all min-h-[36px]"
+                      title="Cancel Order"
+                    >
+                      <X className="w-3.5 h-3.5" /> Cancel
+                    </button>
+                  )}
                 </>
               )}
               <button
@@ -756,6 +811,62 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
             Load More ({filteredOrders.length - visibleCount} remaining)
           </button>
         </div>
+      )}
+
+      {/* Cancel Order Dialog */}
+      {cancelDialog.open && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+            onClick={() => setCancelDialog({ orderId: "", open: false })}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="glass-card rounded-2xl p-6 max-w-md w-full animate-scale-in">
+              <h3 className="text-lg font-bold mb-2">Cancel Order</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Are you sure you want to cancel this order?
+              </p>
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-muted-foreground">Reason for cancellation</label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border text-sm outline-none focus:border-primary/50"
+                >
+                  <option value="Customer Request">Customer Request</option>
+                  <option value="Out of Stock">Out of Stock</option>
+                  <option value="Wrong Order">Wrong Order</option>
+                  <option value="Duplicate Order">Duplicate Order</option>
+                  <option value="Other">Other</option>
+                </select>
+                {cancelReason === "Other" && (
+                  <input
+                    type="text"
+                    value={cancelCustomReason}
+                    onChange={(e) => setCancelCustomReason(e.target.value)}
+                    placeholder="Enter reason..."
+                    className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border text-sm outline-none focus:border-primary/50"
+                  />
+                )}
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setCancelDialog({ orderId: "", open: false })}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  Keep Order
+                </button>
+                <button
+                  onClick={handleCancelOrder}
+                  disabled={cancelReason === "Other" && !cancelCustomReason.trim()}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  Cancel Order
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Export FAB */}

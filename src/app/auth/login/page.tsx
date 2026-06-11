@@ -55,9 +55,7 @@ export default function LoginPage() {
   };
 
   const handleForgotPassword = () => {
-    toast("Please contact your administrator to reset your password.", {
-      icon: "🔒",
-    });
+    router.push("/auth/reset-password");
   };
 
   return (

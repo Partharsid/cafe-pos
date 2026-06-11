@@ -1,6 +1,8 @@
 export type UserRole = "super_admin" | "cafe_admin" | "cashier" | "customer";
 export type OrderStatus = "pending" | "preparing" | "ready" | "completed" | "cancelled";
 export type OrderType = "dine_in" | "takeaway" | "qr";
+export type PaymentMethod = "cash" | "upi_qr" | "razorpay" | "split";
+export type PaymentStatus = "pending" | "completed" | "failed" | "refunded";
 
 export interface Cafe {
   id: string;
@@ -10,6 +12,8 @@ export interface Cafe {
   logo_url: string | null;
   is_active: boolean;
   royalty_percentage: number;
+  avg_prep_time_minutes: number;
+  tax_percentage: number;
   created_at: string;
   updated_at: string;
 }
@@ -74,6 +78,11 @@ export interface Order {
   royalty_amount: number;
   total: number;
   notes: string | null;
+  cancellation_reason: string | null;
+  discount_percentage: number;
+  discount_amount: number;
+  payment_status: string | null;
+  payment_method: string | null;
   created_at: string;
   updated_at: string;
   order_items?: OrderItem[];
@@ -89,8 +98,20 @@ export interface OrderItem {
   unit_price: number;
   subtotal: number;
   notes: string | null;
+  modifiers: any | null;
   created_at: string;
   menu_item?: MenuItem;
+}
+
+export interface ItemModifier {
+  id: string;
+  menu_item_id: string;
+  name: string;
+  type: "select" | "multi";
+  options: { name: string; price_modifier: number }[];
+  display_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RoyaltyLog {
@@ -110,4 +131,22 @@ export interface DashboardStats {
   totalRoyalty: number;
   topItems: { name: string; count: number; revenue: number }[];
   revenueByDay: { date: string; revenue: number; orders: number }[];
+}
+
+export interface Payment {
+  id: string;
+  order_id: string;
+  cafe_id: string;
+  amount: number;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  razorpay_order_id: string | null;
+  razorpay_payment_id: string | null;
+  razorpay_signature: string | null;
+  qr_code_url: string | null;
+  split_details: any | null;
+  cash_amount: number | null;
+  upi_amount: number | null;
+  created_at: string;
+  updated_at: string;
 }

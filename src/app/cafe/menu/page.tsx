@@ -36,7 +36,7 @@ import {
 import toast from "react-hot-toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
-type SortMode = "name" | "price-asc" | "price-desc" | "newest" | "popular";
+type SortMode = "name" | "price-asc" | "price-desc" | "newest";
 
 export default function MenuManagement() {
   const { profile } = useAuthStore();
@@ -59,8 +59,9 @@ export default function MenuManagement() {
   const [deleteCategoryTarget, setDeleteCategoryTarget] = useState<MenuCategory | null>(null);
 
   const [editingItem, setEditingItem] = useState<Partial<MenuItem> | null>(null);
+  const [editingModifiers, setEditingModifiers] = useState<any[]>([]);
   const [showItemModal, setShowItemModal] = useState(false);
-  const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
+  const saveAndAddAnotherRef = useRef(false);
   const [deleteItemTarget, setDeleteItemTarget] = useState<MenuItem | null>(null);
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -141,9 +142,6 @@ export default function MenuManagement() {
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
         break;
-      case "popular":
-        filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-        break;
       default:
         filtered = [...filtered].sort((a, b) => a.display_order - b.display_order);
     }
@@ -210,6 +208,19 @@ export default function MenuManagement() {
     if (!deleteCategoryTarget) return;
     setWorking(true);
     try {
+      const itemCount = categoryItemCounts[deleteCategoryTarget.id] || 0;
+      const otherCategories = categories.filter((c) => c.id !== deleteCategoryTarget.id);
+
+      if (itemCount > 0 && otherCategories.length > 0) {
+        const targetCat = otherCategories[0];
+        await supabase
+          .from("menu_items")
+          .update({ category_id: targetCat.id })
+          .eq("category_id", deleteCategoryTarget.id);
+      } else if (itemCount > 0 && otherCategories.length === 0) {
+        await supabase.from("menu_items").delete().eq("category_id", deleteCategoryTarget.id);
+      }
+
       await supabase.from("menu_categories").delete().eq("id", deleteCategoryTarget.id);
       toast.success("Category deleted");
       setDeleteCategoryTarget(null);
@@ -273,11 +284,35 @@ export default function MenuManagement() {
         await supabase.from("menu_items").update(payload).eq("id", editingItem.id);
         toast.success("Item updated");
       } else {
-        await supabase.from("menu_items").insert({ ...payload, cafe_id: cafeId });
+        const { data: newItem } = await supabase.from("menu_items").insert({ ...payload, cafe_id: cafeId }).select().single();
         toast.success("Item created");
+        if (newItem && editingModifiers.length > 0) {
+          await supabase.from("item_modifiers").insert(
+            editingModifiers.map((m, i) => ({
+              menu_item_id: newItem.id,
+              name: m.name,
+              type: m.type,
+              options: m.options,
+              display_order: i,
+            }))
+          );
+        }
       }
 
-      if (saveAndAddAnother && !editingItem.id) {
+      if (editingItem.id && editingModifiers.length > 0) {
+        await supabase.from("item_modifiers").delete().eq("menu_item_id", editingItem.id);
+        await supabase.from("item_modifiers").insert(
+          editingModifiers.map((m, i) => ({
+            menu_item_id: editingItem.id,
+            name: m.name,
+            type: m.type,
+            options: m.options,
+            display_order: i,
+          }))
+        );
+      }
+
+      if (saveAndAddAnotherRef.current && !editingItem.id) {
         setEditingItem({
           name: "",
           price: 0,
@@ -288,7 +323,7 @@ export default function MenuManagement() {
         setEditingItem(null);
         setShowItemModal(false);
       }
-      setSaveAndAddAnother(false);
+      saveAndAddAnotherRef.current = false;
       await fetchData();
     } catch (err: any) {
       toast.error(err.message);
@@ -459,7 +494,7 @@ export default function MenuManagement() {
     return "success";
   };
 
-  const startEditItem = (item?: MenuItem) => {
+const startEditItem = async (item?: MenuItem) => {
     if (item) {
       setEditingItem({
         id: item.id,
@@ -472,11 +507,18 @@ export default function MenuManagement() {
         stock_quantity: item.stock_quantity,
         low_stock_threshold: item.low_stock_threshold,
       });
+      const { data: mods } = await supabase
+        .from("item_modifiers")
+        .select("*")
+        .eq("menu_item_id", item.id)
+        .order("display_order");
+      setEditingModifiers(mods || []);
     } else {
       setEditingItem({ name: "", price: 0, category_id: selectedCategory || categories[0]?.id || "" });
+      setEditingModifiers([]);
     }
     setShowItemModal(true);
-    setSaveAndAddAnother(false);
+    saveAndAddAnotherRef.current = false;
   };
 
   // --- Render: Loading skeleton ---
@@ -668,7 +710,6 @@ export default function MenuManagement() {
             <option value="price-asc">Price: Low to High</option>
             <option value="price-desc">Price: High to Low</option>
             <option value="newest">Newest first</option>
-            <option value="popular">Popular</option>
           </select>
           <button
             onClick={exportCSV}
@@ -811,7 +852,22 @@ export default function MenuManagement() {
                         <Edit3 className="w-3 h-3 text-muted-foreground" />
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setDeleteCategoryTarget(cat); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const itemCount = categoryItemCounts[cat.id] || 0;
+                          const otherCategories = categories.filter((c) => c.id !== cat.id);
+                          if (itemCount > 0 && otherCategories.length > 0) {
+                            if (confirm(`This category has ${itemCount} items. They will be moved to "${otherCategories[0].name}". Continue?`)) {
+                              setDeleteCategoryTarget(cat);
+                            }
+                          } else if (itemCount > 0 && otherCategories.length === 0) {
+                            if (confirm(`Deleting this category will also delete all ${itemCount} items in it. Continue?`)) {
+                              setDeleteCategoryTarget(cat);
+                            }
+                          } else {
+                            setDeleteCategoryTarget(cat);
+                          }
+                        }}
                         className="p-1 rounded hover:bg-destructive/15"
                       >
                         <Trash2 className="w-3 h-3 text-destructive" />
@@ -1196,11 +1252,119 @@ export default function MenuManagement() {
                     Available for ordering
                   </label>
                 </div>
+
+                {/* Modifiers Section */}
+                <div className="sm:col-span-2 border-t border-border pt-4 mt-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground">Modifiers</h3>
+                    <button
+                      onClick={() =>
+                        setEditingModifiers((prev) => [
+                          ...prev,
+                          { name: "", type: "select", options: [{ name: "", price_modifier: 0 }] },
+                        ])
+                      }
+                      className="flex items-center gap-1 text-xs text-primary hover:underline min-h-[36px]"
+                    >
+                      <Plus className="w-3 h-3" /> Add Group
+                    </button>
+                  </div>
+                  {editingModifiers.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No modifiers. Add size or add-on groups.</p>
+                  )}
+                  {editingModifiers.map((mod, mi) => (
+                    <div key={mi} className="mb-3 p-3 rounded-lg bg-muted/40 border border-border space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={mod.name}
+                          onChange={(e) => {
+                            const next = [...editingModifiers];
+                            next[mi] = { ...next[mi], name: e.target.value };
+                            setEditingModifiers(next);
+                          }}
+                          className="flex-1 px-2 py-1.5 rounded bg-muted border border-border text-xs outline-none"
+                          placeholder="e.g. Size, Add-ons"
+                        />
+                        <select
+                          value={mod.type}
+                          onChange={(e) => {
+                            const next = [...editingModifiers];
+                            next[mi] = { ...next[mi], type: e.target.value };
+                            setEditingModifiers(next);
+                          }}
+                          className="px-2 py-1.5 rounded bg-muted border border-border text-xs outline-none"
+                        >
+                          <option value="select">Single select</option>
+                          <option value="multi">Multi select</option>
+                        </select>
+                        <button
+                          onClick={() =>
+                            setEditingModifiers((prev) => prev.filter((_, i) => i !== mi))
+                          }
+                          className="p-1 rounded hover:bg-destructive/15 min-h-[32px] min-w-[32px] flex items-center justify-center"
+                        >
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </button>
+                      </div>
+                      <div className="space-y-1 pl-2">
+                        {mod.options.map((opt: any, oi: number) => (
+                          <div key={oi} className="flex items-center gap-2">
+                            <input
+                              value={opt.name}
+                              onChange={(e) => {
+                                const next = [...editingModifiers];
+                                const opts = [...next[mi].options];
+                                opts[oi] = { ...opts[oi], name: e.target.value };
+                                next[mi] = { ...next[mi], options: opts };
+                                setEditingModifiers(next);
+                              }}
+                              className="flex-1 px-2 py-1 rounded bg-muted border border-border text-xs outline-none"
+                              placeholder="Option name"
+                            />
+                            <input
+                              type="number"
+                              value={opt.price_modifier}
+                              onChange={(e) => {
+                                const next = [...editingModifiers];
+                                const opts = [...next[mi].options];
+                                opts[oi] = { ...opts[oi], price_modifier: Number(e.target.value) || 0 };
+                                next[mi] = { ...next[mi], options: opts };
+                                setEditingModifiers(next);
+                              }}
+                              className="w-20 px-2 py-1 rounded bg-muted border border-border text-xs outline-none text-right"
+                              placeholder="Price +"
+                            />
+                            <button
+                              onClick={() => {
+                                const next = [...editingModifiers];
+                                next[mi] = { ...next[mi], options: next[mi].options.filter((_: any, j: number) => j !== oi) };
+                                setEditingModifiers(next);
+                              }}
+                              className="p-1 rounded hover:bg-destructive/15"
+                            >
+                              <X className="w-3 h-3 text-destructive" />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => {
+                            const next = [...editingModifiers];
+                            next[mi] = { ...next[mi], options: [...next[mi].options, { name: "", price_modifier: 0 }] };
+                            setEditingModifiers(next);
+                          }}
+                          className="text-[10px] text-muted-foreground hover:text-primary mt-1"
+                        >
+                          + Add option
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-2 mt-5">
                 <button
-                  onClick={() => { setSaveAndAddAnother(false); handleSaveItem(); }}
+                  onClick={() => { saveAndAddAnotherRef.current = false; handleSaveItem(); }}
                   disabled={working}
                   className="neon-glow flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold min-h-[44px] disabled:opacity-50"
                 >
@@ -1209,7 +1373,7 @@ export default function MenuManagement() {
                 </button>
                 {!editingItem?.id && (
                   <button
-                    onClick={() => { setSaveAndAddAnother(true); handleSaveItem(); }}
+                    onClick={() => { saveAndAddAnotherRef.current = true; handleSaveItem(); }}
                     disabled={working}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border text-sm font-medium min-h-[44px] hover:bg-muted disabled:opacity-50"
                   >
@@ -1218,7 +1382,7 @@ export default function MenuManagement() {
                 )}
                 <div className="flex-1" />
                 <button
-                  onClick={() => { setShowItemModal(false); setEditingItem(null); }}
+                  onClick={() => { setShowItemModal(false); setEditingItem(null); setEditingModifiers([]); }}
                   className="px-5 py-2.5 rounded-lg border border-border text-sm min-h-[44px] hover:bg-muted"
                 >
                   Cancel
@@ -1246,8 +1410,15 @@ export default function MenuManagement() {
         open={!!deleteCategoryTarget}
         onOpenChange={(open) => { if (!open) setDeleteCategoryTarget(null); }}
         title="Delete Category"
-        message={<>Delete &ldquo;{deleteCategoryTarget?.name}&rdquo; and all {deleteCategoryTarget ? categoryItemCounts[deleteCategoryTarget.id] || 0 : 0} items in it? This cannot be undone.</>}
-        confirmText="Delete All"
+        message={<>
+          {deleteCategoryTarget && categoryItemCounts[deleteCategoryTarget.id] > 0 && categories.filter(c => c.id !== deleteCategoryTarget.id).length > 0
+            ? <>Delete &ldquo;{deleteCategoryTarget?.name}&rdquo;? {categoryItemCounts[deleteCategoryTarget.id]} items will be moved to &ldquo;{categories.filter(c => c.id !== deleteCategoryTarget.id)[0]?.name}&rdquo;.</>
+            : deleteCategoryTarget && categoryItemCounts[deleteCategoryTarget.id] > 0 && categories.filter(c => c.id !== deleteCategoryTarget.id).length === 0
+            ? <>Delete &ldquo;{deleteCategoryTarget?.name}&rdquo; and all {categoryItemCounts[deleteCategoryTarget.id]} items in it? This cannot be undone.</>
+            : <>Delete &ldquo;{deleteCategoryTarget?.name}&rdquo;? This category is empty.</>
+          }
+        </>}
+        confirmText={deleteCategoryTarget && categoryItemCounts[deleteCategoryTarget.id] > 0 && categories.filter(c => c.id !== deleteCategoryTarget.id).length === 0 ? "Delete All" : "Delete"}
         variant="danger"
         loading={working}
         onConfirm={handleDeleteCategory}

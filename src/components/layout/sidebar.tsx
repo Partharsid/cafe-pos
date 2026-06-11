@@ -22,6 +22,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  LayoutGrid,
+  Calendar,
 } from "lucide-react";
 
 interface NavItem {
@@ -89,9 +91,27 @@ const navItems: NavItem[] = [
     roles: ["cafe_admin"],
   },
   {
+    href: "/cafe/table-map",
+    label: "Table Map",
+    icon: <LayoutGrid className="w-5 h-5" />,
+    roles: ["cafe_admin"],
+  },
+  {
+    href: "/cafe/customers",
+    label: "Customers",
+    icon: <Users className="w-5 h-5" />,
+    roles: ["cafe_admin"],
+  },
+  {
     href: "/cafe/analytics",
     label: "Analytics",
     icon: <BarChart3 className="w-5 h-5" />,
+    roles: ["cafe_admin"],
+  },
+  {
+    href: "/cafe/day-end",
+    label: "Day End",
+    icon: <Calendar className="w-5 h-5" />,
     roles: ["cafe_admin"],
   },
   {

@@ -23,7 +23,10 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
 
-const PROD_BASE = "https://cafe.rrdowntownarcade.in";
+const PROD_BASE =
+  typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_BASE_URL || window.location.origin)
+    : (process.env.NEXT_PUBLIC_BASE_URL || "https://cafe.rrdowntownarcade.in");
 
 function TableCardSkeleton() {
   return (
