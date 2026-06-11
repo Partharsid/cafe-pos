@@ -5,7 +5,8 @@ import { useUIStore } from "@/lib/store/ui-store";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -18,6 +19,8 @@ import {
   Percent,
   ChefHat,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface NavItem {
@@ -25,6 +28,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   roles: string[];
+  badge?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -69,6 +73,7 @@ const navItems: NavItem[] = [
     label: "Orders",
     icon: <ClipboardList className="w-5 h-5" />,
     roles: ["cafe_admin", "cashier"],
+    badge: true,
   },
   {
     href: "/cafe/tables",
@@ -127,37 +132,146 @@ export function Sidebar() {
   const { profile } = useAuthStore();
   const { mobileSidebarOpen, setMobileSidebarOpen } = useUIStore();
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const navRef = useRef<HTMLElement>(null);
+  const [activeRect, setActiveRect] = useState<{ top: number; height: number } | null>(null);
 
   useEffect(() => {
     setMobileSidebarOpen(false);
   }, [pathname, setMobileSidebarOpen]);
 
-  if (!profile) return null;
+  useEffect(() => {
+    if (!profile?.cafe_id || profile.role === "customer") return;
 
-  const filtered = navItems.filter((item) => item.roles.includes(profile.role));
-  const bottomTabs = bottomTabMap[profile.role] || [];
+    const supabase = createClient();
+
+    supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("cafe_id", profile.cafe_id)
+      .eq("status", "pending")
+      .then(({ count }) => setPendingCount(count || 0));
+
+    const channel = supabase
+      .channel("sidebar-orders")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+          filter: `cafe_id=eq.${profile.cafe_id}`,
+        },
+        () => {
+          supabase
+            .from("orders")
+            .select("id", { count: "exact", head: true })
+            .eq("cafe_id", profile.cafe_id)
+            .eq("status", "pending")
+            .then(({ count }) => setPendingCount(count || 0));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.cafe_id, profile?.role]);
+
+  useEffect(() => {
+    if (!navRef.current || collapsed) {
+      setActiveRect(null);
+      return;
+    }
+
+    const activeLink = navRef.current.querySelector('[data-active="true"]');
+    if (activeLink) {
+      const navTop = navRef.current.getBoundingClientRect().top;
+      const linkRect = activeLink.getBoundingClientRect();
+      setActiveRect({
+        top: linkRect.top - navTop,
+        height: linkRect.height,
+      });
+    } else {
+      setActiveRect(null);
+    }
+  }, [pathname, collapsed]);
+
+  const filtered = navItems.filter((item) => item.roles.includes(profile!.role));
+  const bottomTabs = bottomTabMap[profile!.role] || [];
+
+  if (!profile) return null;
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="w-64 min-h-[calc(100vh-4rem)] border-r border-border bg-card/50 backdrop-blur hidden lg:flex flex-col shrink-0">
-        <nav className="p-4 space-y-1 flex-1">
-          {filtered.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
-                pathname === item.href
-                  ? "bg-primary/15 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          ))}
+      <aside
+        className={cn(
+          "min-h-[calc(100vh-4rem)] border-r border-border bg-card/50 backdrop-blur hidden lg:flex flex-col shrink-0 transition-all duration-300",
+          collapsed ? "w-16" : "w-64"
+        )}
+      >
+        <nav ref={navRef} className="p-3 space-y-1 flex-1 relative">
+          {activeRect && !collapsed && (
+            <div
+              className="absolute left-3 right-3 rounded-lg bg-primary/15 transition-all duration-300 ease-out"
+              style={{
+                top: activeRect.top,
+                height: activeRect.height,
+              }}
+            />
+          )}
+
+          {filtered.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const hasPending = item.badge && pendingCount > 0;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                data-active={isActive || undefined}
+                className={cn(
+                  "relative flex items-center gap-3 rounded-lg text-sm transition-all duration-200 group",
+                  collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5 z-10",
+                  isActive
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <span className="relative shrink-0">
+                  {item.icon}
+                  {hasPending && (
+                    <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card animate-pulse-glow" />
+                  )}
+                </span>
+                {!collapsed && (
+                  <span className="truncate">{item.label}</span>
+                )}
+                {collapsed && (
+                  <div className="absolute left-full ml-3 px-3 py-1.5 rounded-lg bg-popover text-popover-foreground text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg border border-border">
+                    {item.label}
+                  </div>
+                )}
+              </Link>
+            );
+          })}
         </nav>
+
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="mx-3 mb-3 p-2 rounded-lg hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground hover:text-foreground"
+        >
+          {collapsed ? (
+            <ChevronRight className="w-4 h-4" />
+          ) : (
+            <>
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-xs ml-2">Collapse</span>
+            </>
+          )}
+        </button>
       </aside>
 
       {/* Mobile Slideover */}
@@ -178,22 +292,33 @@ export function Sidebar() {
               </button>
             </div>
             <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
-              {filtered.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileSidebarOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200 min-h-[44px]",
-                    pathname === item.href
-                      ? "bg-primary/15 text-primary font-medium"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  {item.icon}
-                  {item.label}
-                </Link>
-              ))}
+              {filtered.map((item) => {
+                const isActive =
+                  pathname === item.href || pathname.startsWith(item.href + "/");
+                const hasPending = item.badge && pendingCount > 0;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200 min-h-[44px]",
+                      isActive
+                        ? "bg-primary/15 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <span className="relative shrink-0">
+                      {item.icon}
+                      {hasPending && (
+                        <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card animate-pulse-glow" />
+                      )}
+                    </span>
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
         </>
@@ -206,18 +331,27 @@ export function Sidebar() {
             {bottomTabs.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href + "/");
+              const hasPending =
+                (item.href === "/cafe/orders" || item.href.includes("/orders")) &&
+                pendingCount > 0;
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 py-1 rounded-lg transition-colors min-h-[44px]",
+                    "flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 py-1 rounded-lg transition-colors min-h-[44px] relative",
                     isActive
                       ? "text-primary"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {item.icon}
+                  <span className="relative">
+                    {item.icon}
+                    {hasPending && (
+                      <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card animate-pulse-glow" />
+                    )}
+                  </span>
                   <span className="text-[10px] font-medium truncate max-w-full">
                     {item.label}
                   </span>
