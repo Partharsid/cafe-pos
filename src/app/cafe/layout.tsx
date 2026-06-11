@@ -9,7 +9,7 @@ export default function CafeLayout({ children }: { children: React.ReactNode }) 
       <Header />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 overflow-auto pb-20 lg:pb-6">{children}</main>
       </div>
     </>
   );

@@ -6,14 +6,20 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
 import type { MenuItem } from "@/types/database";
-import { Loader2, Package, AlertTriangle, CheckCircle, Save } from "lucide-react";
+import {
+  Loader2,
+  Package,
+  AlertTriangle,
+  CheckCircle,
+  Save,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function InventoryPage() {
   const { profile } = useAuthStore();
   const isSuperAdmin = profile?.role === "super_admin";
   const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
-  const [cafes, setCafes] = useState<{id:string, name:string}[]>([]);
+  const [cafes, setCafes] = useState<{ id: string; name: string }[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingStock, setEditingStock] = useState<Record<string, number>>({});
@@ -22,9 +28,16 @@ export default function InventoryPage() {
 
   useEffect(() => {
     if (isSuperAdmin) {
-      supabase.from("cafes").select("id, name").eq("is_active", true).then(({data}) => {
-        if (data) { setCafes(data); if (data.length > 0) setSelectedCafeId(data[0].id); }
-      });
+      supabase
+        .from("cafes")
+        .select("id, name")
+        .eq("is_active", true)
+        .then(({ data }) => {
+          if (data) {
+            setCafes(data);
+            if (data.length > 0) setSelectedCafeId(data[0].id);
+          }
+        });
     }
   }, [isSuperAdmin]);
 
@@ -76,21 +89,26 @@ export default function InventoryPage() {
   }
 
   const lowStock = items.filter(
-    (i) => i.stock_quantity !== null && i.stock_quantity <= i.low_stock_threshold
+    (i) =>
+      i.stock_quantity !== null &&
+      i.stock_quantity <= i.low_stock_threshold
   );
   const outOfStock = items.filter(
     (i) => i.stock_quantity !== null && i.stock_quantity === 0
   );
   const okStock = items.filter(
     (i) =>
-      i.stock_quantity !== null && i.stock_quantity > i.low_stock_threshold
+      i.stock_quantity !== null &&
+      i.stock_quantity > i.low_stock_threshold
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Inventory
+        </h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           Track and update item stock levels
         </p>
       </div>
@@ -104,47 +122,51 @@ export default function InventoryPage() {
             className="px-3 py-2 rounded-lg bg-muted border border-border text-sm outline-none"
           >
             {cafes.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <GlassCard>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-destructive/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-destructive/15">
               <AlertTriangle className="w-5 h-5 text-destructive" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Out of Stock</p>
-              <p className="text-2xl font-bold text-destructive">
+              <p className="text-xl sm:text-2xl font-bold text-destructive">
                 {outOfStock.length}
               </p>
             </div>
           </div>
         </GlassCard>
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-chart-5/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-chart-5/15">
               <Package className="w-5 h-5 text-chart-5" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Low Stock</p>
-              <p className="text-2xl font-bold text-chart-5">
+              <p className="text-xl sm:text-2xl font-bold text-chart-5">
                 {lowStock.length}
               </p>
             </div>
           </div>
         </GlassCard>
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-chart-4/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-chart-4/15">
               <CheckCircle className="w-5 h-5 text-chart-4" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Well Stocked</p>
-              <p className="text-2xl font-bold text-chart-4">{okStock.length}</p>
+              <p className="text-xl sm:text-2xl font-bold text-chart-4">
+                {okStock.length}
+              </p>
             </div>
           </div>
         </GlassCard>
@@ -153,10 +175,10 @@ export default function InventoryPage() {
       <div className="space-y-4">
         {outOfStock.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold text-destructive mb-3">
+            <h3 className="text-base sm:text-lg font-semibold text-destructive mb-3">
               Out of Stock
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {outOfStock.map((item) => (
                 <StockCard
                   key={item.id}
@@ -175,10 +197,10 @@ export default function InventoryPage() {
 
         {lowStock.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold text-chart-5 mb-3">
+            <h3 className="text-base sm:text-lg font-semibold text-chart-5 mb-3">
               Low Stock
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {lowStock.map((item) => (
                 <StockCard
                   key={item.id}
@@ -196,8 +218,10 @@ export default function InventoryPage() {
 
         {okStock.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold mb-3">In Stock</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <h3 className="text-base sm:text-lg font-semibold mb-3">
+              In Stock
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {okStock.map((item) => (
                 <StockCard
                   key={item.id}
@@ -214,7 +238,7 @@ export default function InventoryPage() {
         )}
 
         {items.length === 0 && (
-          <p className="text-muted-foreground text-center py-8">
+          <p className="text-muted-foreground text-center py-8 text-sm">
             No inventory-tracked items. Set stock quantity on menu items to
             enable tracking.
           </p>
@@ -239,34 +263,43 @@ function StockCard({
 }) {
   return (
     <GlassCard
-      className={`p-4 ${urgent ? "border-destructive/30" : ""}`}
+      className={`p-3 sm:p-4 ${urgent ? "border-destructive/30" : ""}`}
     >
-      <div className="flex items-start justify-between mb-2">
-        <div>
-          <h4 className="font-semibold text-sm">{item.name}</h4>
+      <div className="flex items-start justify-between mb-2 gap-2">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-sm truncate">{item.name}</h4>
           <p className="text-xs text-muted-foreground">
             Alert at {item.low_stock_threshold} units
           </p>
         </div>
         <Badge
           variant={
-            stock === 0 ? "destructive" : stock <= item.low_stock_threshold ? "warning" : "success"
+            stock === 0
+              ? "destructive"
+              : stock <= item.low_stock_threshold
+                ? "warning"
+                : "success"
           }
+          className="shrink-0"
         >
-          {stock === 0 ? "Out" : stock <= item.low_stock_threshold ? "Low" : "OK"}
+          {stock === 0
+            ? "Out"
+            : stock <= item.low_stock_threshold
+              ? "Low"
+              : "OK"}
         </Badge>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <input
           type="number"
           min={0}
           value={stock}
           onChange={(e) => onChange(parseInt(e.target.value) || 0)}
-          className="w-20 px-2 py-1.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm text-center"
+          className="w-20 px-2 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm text-center min-h-[44px]"
         />
         <button
           onClick={() => onSave(item.id)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+          className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors min-h-[44px]"
         >
           <Save className="w-3.5 h-3.5" /> Update
         </button>

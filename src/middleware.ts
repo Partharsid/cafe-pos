@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/menu", "/auth", "/api"];
+const PUBLIC_PATHS = ["/menu", "/auth", "/api", "/customer"];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -65,6 +65,19 @@ export async function middleware(request: NextRequest) {
     if (path.startsWith("/admin") || path.startsWith("/cafe")) {
       const url = request.nextUrl.clone();
       url.pathname = "/counter";
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  if (role === "customer") {
+    if (
+      path.startsWith("/admin") ||
+      path.startsWith("/cafe") ||
+      path.startsWith("/counter")
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/menu";
       return NextResponse.redirect(url);
     }
     return supabaseResponse;

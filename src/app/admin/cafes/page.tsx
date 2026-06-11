@@ -122,11 +122,13 @@ export default function ManageCafes() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manage Cafes</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Manage Cafes
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
             Onboard, edit, or remove cafe shops
           </p>
         </div>
@@ -134,9 +136,14 @@ export default function ManageCafes() {
           onClick={() => {
             setNewCafe(true);
             setEditingId(null);
-            setForm({ name: "", slug: "", description: "", royalty_percentage: 0 });
+            setForm({
+              name: "",
+              slug: "",
+              description: "",
+              royalty_percentage: 0,
+            });
           }}
-          className="neon-glow flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
+          className="neon-glow flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity min-h-[44px]"
         >
           <Plus className="w-4 h-4" />
           Add Cafe
@@ -144,11 +151,11 @@ export default function ManageCafes() {
       </div>
 
       {(newCafe || editingId) && (
-        <GlassCard>
-          <h3 className="text-lg font-semibold mb-4">
+        <GlassCard className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-4">
             {editingId ? "Edit Cafe" : "New Cafe"}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5 text-muted-foreground">
                 Cafe Name *
@@ -158,7 +165,7 @@ export default function ManageCafes() {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, name: e.target.value }))
                 }
-                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm"
+                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm min-h-[44px]"
                 placeholder="e.g. Pizza Corner"
               />
             </div>
@@ -171,21 +178,26 @@ export default function ManageCafes() {
                 onChange={(e) =>
                   setForm((f) => ({
                     ...f,
-                    slug: e.target.value.toLowerCase().replace(/\s+/g, "-"),
+                    slug: e.target.value
+                      .toLowerCase()
+                      .replace(/\s+/g, "-"),
                   }))
                 }
-                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm"
+                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm min-h-[44px]"
                 placeholder="e.g. pizza-corner"
               />
             </div>
-            <div className="md:col-span-2">
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium mb-1.5 text-muted-foreground">
                 Description
               </label>
               <textarea
                 value={form.description}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
+                  setForm((f) => ({
+                    ...f,
+                    description: e.target.value,
+                  }))
                 }
                 className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm"
                 rows={2}
@@ -205,24 +217,25 @@ export default function ManageCafes() {
                 onChange={(e) =>
                   setForm((f) => ({
                     ...f,
-                    royalty_percentage: parseFloat(e.target.value) || 0,
+                    royalty_percentage:
+                      parseFloat(e.target.value) || 0,
                   }))
                 }
-                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm"
+                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm min-h-[44px]"
               />
             </div>
           </div>
           <div className="flex gap-2 mt-4">
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 min-h-[44px]"
             >
               <Save className="w-4 h-4" />
               {editingId ? "Update" : "Create"}
             </button>
             <button
               onClick={resetForm}
-              className="px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors"
+              className="px-4 py-2.5 rounded-lg border border-border text-sm hover:bg-muted transition-colors min-h-[44px]"
             >
               Cancel
             </button>
@@ -230,15 +243,18 @@ export default function ManageCafes() {
         </GlassCard>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {cafes.map((cafe) => (
-          <GlassCard key={cafe.id} className="relative">
+          <GlassCard key={cafe.id} className="p-4 relative">
             <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Store className="w-5 h-5 text-primary" />
-                <h3 className="font-semibold">{cafe.name}</h3>
+              <div className="flex items-center gap-2 min-w-0">
+                <Store className="w-5 h-5 text-primary shrink-0" />
+                <h3 className="font-semibold truncate">{cafe.name}</h3>
               </div>
-              <Badge variant={cafe.is_active ? "success" : "destructive"}>
+              <Badge
+                variant={cafe.is_active ? "success" : "destructive"}
+                className="shrink-0 ml-2"
+              >
                 {cafe.is_active ? "Active" : "Inactive"}
               </Badge>
             </div>
@@ -251,17 +267,17 @@ export default function ManageCafes() {
                 {Number(cafe.royalty_percentage)}%
               </span>
             </p>
-            <div className="flex gap-1.5 mt-4">
+            <div className="flex gap-1.5 mt-4 flex-wrap">
               <button
                 onClick={() => handleEdit(cafe)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 transition-colors min-h-[36px]"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 Edit
               </button>
               <button
                 onClick={() => handleToggleActive(cafe)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 transition-colors min-h-[36px]"
               >
                 {cafe.is_active ? (
                   <X className="w-3.5 h-3.5" />
@@ -272,7 +288,7 @@ export default function ManageCafes() {
               </button>
               <button
                 onClick={() => handleDelete(cafe.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors min-h-[36px]"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Delete
@@ -280,6 +296,11 @@ export default function ManageCafes() {
             </div>
           </GlassCard>
         ))}
+        {cafes.length === 0 && (
+          <p className="text-muted-foreground text-center py-8 col-span-full text-sm">
+            No cafes yet. Add your first cafe above.
+          </p>
+        )}
       </div>
     </div>
   );

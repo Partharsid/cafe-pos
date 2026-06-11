@@ -21,27 +21,36 @@ export default function TablesPage() {
   const { profile } = useAuthStore();
   const isSuperAdmin = profile?.role === "super_admin";
   const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
-  const [cafes, setCafes] = useState<{id:string, name:string}[]>([]);
+  const [cafes, setCafes] = useState<{ id: string; name: string }[]>([]);
   const [cafe, setCafe] = useState<Cafe | null>(null);
   const [tables, setTables] = useState<CafeTable[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTableNumber, setNewTableNumber] = useState("");
   const [generating, setGenerating] = useState<string | null>(null);
   const [showGenericQR, setShowGenericQR] = useState(false);
+  const [qrSize, setQrSize] = useState(120);
   const supabase = createClient();
   const cafeId = isSuperAdmin ? selectedCafeId : profile?.cafe_id;
 
   useEffect(() => {
     if (isSuperAdmin) {
-      supabase.from("cafes").select("id, name").eq("is_active", true).then(({data}) => {
-        if (data) { setCafes(data); if (data.length > 0) setSelectedCafeId(data[0].id); }
-      });
+      supabase
+        .from("cafes")
+        .select("id, name")
+        .eq("is_active", true)
+        .then(({ data }) => {
+          if (data) {
+            setCafes(data);
+            if (data.length > 0) setSelectedCafeId(data[0].id);
+          }
+        });
     }
   }, [isSuperAdmin]);
 
-  const menuUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/menu/${cafe?.slug}`
-    : "";
+  const menuUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/menu/${cafe?.slug}`
+      : "";
 
   const fetchData = async () => {
     if (!cafeId) return;
@@ -61,6 +70,13 @@ export default function TablesPage() {
   useEffect(() => {
     fetchData();
   }, [cafeId]);
+
+  useEffect(() => {
+    setQrSize(window.innerWidth < 400 ? 100 : 120);
+    const onResize = () => setQrSize(window.innerWidth < 400 ? 100 : 120);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const handleAddTable = async () => {
     if (!newTableNumber.trim()) return;
@@ -97,7 +113,9 @@ export default function TablesPage() {
   };
 
   const handleDownloadQR = (tableId: string, tableNumber: string) => {
-    const svg = document.getElementById(`qr-${tableId}`) as unknown as SVGElement;
+    const svg = document.getElementById(
+      `qr-${tableId}`
+    ) as unknown as SVGElement;
     if (!svg) return;
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement("canvas");
@@ -125,19 +143,19 @@ export default function TablesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Tables & QR Codes
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm">
             Manage tables and generate QR codes
           </p>
         </div>
         <button
           onClick={() => setShowGenericQR(!showGenericQR)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm hover:bg-muted transition-colors min-h-[44px]"
         >
           <QrCode className="w-4 h-4" />
           Generic QR
@@ -153,24 +171,26 @@ export default function TablesPage() {
             className="px-3 py-2 rounded-lg bg-muted border border-border text-sm outline-none"
           >
             {cafes.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
       )}
 
-      <GlassCard>
-        <div className="flex gap-2">
+      <GlassCard className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             value={newTableNumber}
             onChange={(e) => setNewTableNumber(e.target.value)}
             placeholder="Table number (e.g. T5)"
-            className="flex-1 px-3 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+            className="flex-1 px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
             onKeyDown={(e) => e.key === "Enter" && handleAddTable()}
           />
           <button
             onClick={handleAddTable}
-            className="neon-glow flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-sm"
+            className="neon-glow flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm min-h-[44px]"
           >
             <Plus className="w-4 h-4" /> Add Table
           </button>
@@ -178,20 +198,20 @@ export default function TablesPage() {
       </GlassCard>
 
       {showGenericQR && (
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <div className="text-center">
             <h3 className="font-semibold mb-2">
               Generic QR Code (Select Table Manually)
             </h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              Scan this QR to open the menu. Customer will select or enter their
-              table number.
+            <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
+              Scan this QR to open the menu. Customer will select or enter
+              their table number.
             </p>
-            <div className="inline-block bg-white p-4 rounded-xl">
+            <div className="inline-block bg-white p-3 sm:p-4 rounded-xl">
               <QRCodeSVG
                 id={`qr-generic-${cafeId}`}
                 value={`${menuUrl}`}
-                size={160}
+                size={qrSize === 100 ? 120 : 160}
                 level="M"
               />
             </div>
@@ -200,7 +220,7 @@ export default function TablesPage() {
                 onClick={() =>
                   handleDownloadQR(`generic-${cafeId}`, "Generic")
                 }
-                className="flex items-center gap-2 mx-auto px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors"
+                className="flex items-center gap-2 mx-auto px-4 py-2.5 rounded-lg border border-border text-sm hover:bg-muted transition-colors min-h-[44px]"
               >
                 <Download className="w-4 h-4" />
                 Download Generic QR
@@ -210,9 +230,9 @@ export default function TablesPage() {
         </GlassCard>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         {tables.map((table) => (
-          <GlassCard key={table.id} className="text-center">
+          <GlassCard key={table.id} className="p-4 text-center">
             <h3 className="text-lg font-bold mb-3">
               Table {table.table_number}
             </h3>
@@ -224,16 +244,16 @@ export default function TablesPage() {
                   table.qr_code_url ||
                   `${menuUrl}?table=${table.table_number}&table_id=${table.id}`
                 }
-                size={120}
+                size={qrSize}
                 level="M"
               />
             </div>
 
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1.5 flex-wrap">
               <button
                 onClick={() => handleGenerateQR(table.id)}
                 disabled={generating === table.id}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 transition-colors disabled:opacity-50 min-h-[36px]"
               >
                 {generating === table.id ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -243,21 +263,28 @@ export default function TablesPage() {
                 Regenerate
               </button>
               <button
-                onClick={() => handleDownloadQR(table.id, table.table_number)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+                onClick={() =>
+                  handleDownloadQR(table.id, table.table_number)
+                }
+                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors min-h-[36px]"
               >
                 <Download className="w-3.5 h-3.5" />
                 Download
               </button>
               <button
                 onClick={() => handleDeleteTable(table.id)}
-                className="p-1.5 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                className="p-2 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </GlassCard>
         ))}
+        {tables.length === 0 && (
+          <p className="text-muted-foreground text-sm text-center py-8 col-span-full">
+            No tables yet. Add your first table above.
+          </p>
+        )}
       </div>
     </div>
   );

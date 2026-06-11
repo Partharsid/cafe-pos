@@ -28,7 +28,7 @@ export default function CafeAdminDashboard() {
   const { profile } = useAuthStore();
   const isSuperAdmin = profile?.role === "super_admin";
   const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
-  const [cafes, setCafes] = useState<{id:string, name:string}[]>([]);
+  const [cafes, setCafes] = useState<{ id: string; name: string }[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [lowStock, setLowStock] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,9 +37,16 @@ export default function CafeAdminDashboard() {
 
   useEffect(() => {
     if (isSuperAdmin) {
-      supabase.from("cafes").select("id, name").eq("is_active", true).then(({data}) => {
-        if (data) { setCafes(data); if (data.length > 0) setSelectedCafeId(data[0].id); }
-      });
+      supabase
+        .from("cafes")
+        .select("id, name")
+        .eq("is_active", true)
+        .then(({ data }) => {
+          if (data) {
+            setCafes(data);
+            if (data.length > 0) setSelectedCafeId(data[0].id);
+          }
+        });
     }
   }, [isSuperAdmin]);
 
@@ -107,12 +114,12 @@ export default function CafeAdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Cafe Dashboard
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-muted-foreground mt-1 text-sm">
           Overview of your cafe performance
         </p>
       </div>
@@ -126,71 +133,79 @@ export default function CafeAdminDashboard() {
             className="px-3 py-2 rounded-lg bg-muted border border-border text-sm outline-none"
           >
             {cafes.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <GlassCard>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-primary/15">
               <ShoppingBag className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Orders</p>
-              <p className="text-2xl font-bold">{stats?.totalOrders || 0}</p>
+              <p className="text-xl sm:text-2xl font-bold">
+                {stats?.totalOrders || 0}
+              </p>
             </div>
           </div>
         </GlassCard>
 
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-chart-4/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-chart-4/15">
               <DollarSign className="w-5 h-5 text-chart-4" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Revenue</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xl sm:text-2xl font-bold">
                 ₹{(stats?.totalRevenue || 0).toLocaleString()}
               </p>
             </div>
           </div>
         </GlassCard>
 
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-accent/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-accent/15">
               <TrendingUp className="w-5 h-5 text-accent" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Net Earnings</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xl sm:text-2xl font-bold">
                 ₹{(stats?.netEarnings || 0).toLocaleString()}
               </p>
             </div>
           </div>
         </GlassCard>
 
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-destructive/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-destructive/15">
               <AlertTriangle className="w-5 h-5 text-destructive" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Pending Orders</p>
-              <p className="text-2xl font-bold">{stats?.pendingOrders || 0}</p>
+              <p className="text-xl sm:text-2xl font-bold">
+                {stats?.pendingOrders || 0}
+              </p>
             </div>
           </div>
         </GlassCard>
       </div>
 
       {lowStock.length > 0 && (
-        <GlassCard className="border-destructive/30">
+        <GlassCard className="border-destructive/30 p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-3">
             <Package className="w-5 h-5 text-destructive" />
-            <h3 className="font-semibold text-destructive">Low Stock Alerts</h3>
+            <h3 className="font-semibold text-destructive">
+              Low Stock Alerts
+            </h3>
           </div>
           <div className="flex flex-wrap gap-2">
             {lowStock.map((item) => (
@@ -202,23 +217,34 @@ export default function CafeAdminDashboard() {
         </GlassCard>
       )}
 
-      <GlassCard>
-        <h3 className="text-lg font-semibold mb-4">Revenue (Last 7 Days)</h3>
-        <div className="h-64">
+      <GlassCard className="p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold mb-4">
+          Revenue (Last 7 Days)
+        </h3>
+        <div className="h-52 sm:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stats?.revenueByDay || []}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="rgba(255,255,255,0.05)"
               />
-              <XAxis dataKey="date" stroke="#9e9e9e" fontSize={12} />
-              <YAxis stroke="#9e9e9e" fontSize={12} />
+              <XAxis
+                dataKey="date"
+                stroke="#9e9e9e"
+                fontSize={10}
+                tickFormatter={(d) => {
+                  const parts = d.split("-");
+                  return `${parts[2] || ""}/${parts[1] || ""}`;
+                }}
+              />
+              <YAxis stroke="#9e9e9e" fontSize={10} width={50} />
               <Tooltip
                 contentStyle={{
                   background: "rgba(5,5,10,0.95)",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: "0.75rem",
                   color: "#f8f8f8",
+                  fontSize: "12px",
                 }}
               />
               <Bar

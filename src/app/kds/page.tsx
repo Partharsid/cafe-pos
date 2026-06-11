@@ -8,14 +8,40 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
 import type { Order } from "@/types/database";
-import { Loader2, Clock, ChefHat, CheckCircle, AlertTriangle } from "lucide-react";
+import {
+  Loader2,
+  Clock,
+  ChefHat,
+  CheckCircle,
+  AlertTriangle,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
 
-const statusSteps: { status: string; label: string; color: string; icon: React.ReactNode }[] = [
-  { status: "pending", label: "New", color: "oklch(0.66 0.19 258.5)", icon: <AlertTriangle className="w-4 h-4" /> },
-  { status: "preparing", label: "Preparing", color: "oklch(0.63 0.18 290)", icon: <ChefHat className="w-4 h-4" /> },
-  { status: "ready", label: "Ready", color: "oklch(0.58 0.12 195)", icon: <CheckCircle className="w-4 h-4" /> },
+const statusSteps: {
+  status: string;
+  label: string;
+  color: string;
+  icon: React.ReactNode;
+}[] = [
+  {
+    status: "pending",
+    label: "New",
+    color: "oklch(0.66 0.19 258.5)",
+    icon: <AlertTriangle className="w-4 h-4" />,
+  },
+  {
+    status: "preparing",
+    label: "Preparing",
+    color: "oklch(0.63 0.18 290)",
+    icon: <ChefHat className="w-4 h-4" />,
+  },
+  {
+    status: "ready",
+    label: "Ready",
+    color: "oklch(0.58 0.12 195)",
+    icon: <CheckCircle className="w-4 h-4" />,
+  },
 ];
 
 export default function KitchenDisplay() {
@@ -24,6 +50,7 @@ export default function KitchenDisplay() {
   const [loading, setLoading] = useState(true);
   const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
   const [cafes, setCafes] = useState<{ id: string; name: string }[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("pending");
   const supabase = createClient();
   const cafeId = profile?.cafe_id;
   const isSuperAdmin = profile?.role === "super_admin";
@@ -31,10 +58,15 @@ export default function KitchenDisplay() {
   const effectiveCafeId = isSuperAdmin ? selectedCafeId : cafeId;
 
   const fetchOrders = async () => {
-    if (!effectiveCafeId) { setLoading(false); return; }
+    if (!effectiveCafeId) {
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from("orders")
-      .select("*, order_items(*, menu_item:menu_items(name)), table:tables(table_number)")
+      .select(
+        "*, order_items(*, menu_item:menu_items(name)), table:tables(table_number)"
+      )
       .eq("cafe_id", effectiveCafeId)
       .in("status", ["pending", "preparing", "ready"])
       .order("created_at", { ascending: true });
@@ -97,17 +129,34 @@ export default function KitchenDisplay() {
     );
   }
 
-  const activeOrders = orders.filter((o) => o.status !== "completed" && o.status !== "cancelled");
+  const activeOrders = orders.filter(
+    (o) => o.status !== "completed" && o.status !== "cancelled"
+  );
   const pending = activeOrders.filter((o) => o.status === "pending");
   const preparing = activeOrders.filter((o) => o.status === "preparing");
   const ready = activeOrders.filter((o) => o.status === "ready");
 
+  const columnMap: Record<
+    string,
+    { orders: typeof pending; nextStatus: string; urgency: "high" | "medium" | "low" }
+  > = {
+    pending: { orders: pending, nextStatus: "preparing", urgency: "high" },
+    preparing: { orders: preparing, nextStatus: "ready", urgency: "medium" },
+    ready: { orders: ready, nextStatus: "completed", urgency: "low" },
+  };
+
+  const accentMap: Record<string, string> = {
+    pending: "oklch(0.66 0.19 258.5)",
+    preparing: "oklch(0.63 0.18 290)",
+    ready: "oklch(0.58 0.12 195)",
+  };
+
   return (
-    <div className="min-h-screen p-4">
-      <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen p-2 sm:p-4">
+      <div className="flex items-center justify-between mb-4 sm:mb-6 flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <ChefHat className="w-8 h-8 text-accent" />
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+          <ChefHat className="w-7 h-7 sm:w-8 sm:h-8 text-accent" />
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
             Kitchen Display
           </h1>
         </div>
@@ -118,75 +167,143 @@ export default function KitchenDisplay() {
             className="px-3 py-2 rounded-lg bg-muted border border-border text-sm outline-none"
           >
             {cafes.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-6rem)]">
-        {/* Pending Column */}
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 mb-3 px-2">
-            <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
-            <h2 className="font-bold text-primary">New Orders</h2>
-            <Badge variant="default">{pending.length}</Badge>
-          </div>
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-            {pending.map((order: any) => (
-              <KdsCard
-                key={order.id}
-                order={order}
-                onUpdateStatus={updateStatus}
-                nextStatus="preparing"
-                accentColor="oklch(0.66 0.19 258.5)"
-                urgency="high"
+      {/* Mobile Tabs */}
+      <div className="flex gap-1 mb-3 lg:hidden">
+        {["pending", "preparing", "ready"].map((tab) => {
+          const col = columnMap[tab];
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-lg text-sm font-semibold capitalize transition-colors min-h-[44px] ${
+                activeTab === tab
+                  ? "bg-primary/15 text-primary border border-primary/30"
+                  : "bg-muted text-muted-foreground border border-border"
+              }`}
+            >
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ background: accentMap[tab] }}
               />
-            ))}
-          </div>
-        </div>
+              {tab}
+              <Badge
+                variant={
+                  tab === "pending"
+                    ? "default"
+                    : tab === "preparing"
+                      ? "secondary"
+                      : "accent"
+                }
+                className="text-[10px] px-1.5"
+              >
+                {col.orders.length}
+              </Badge>
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Preparing Column */}
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 mb-3 px-2">
-            <div className="w-3 h-3 rounded-full bg-secondary" />
-            <h2 className="font-bold text-secondary">Preparing</h2>
-            <Badge variant="secondary">{preparing.length}</Badge>
-          </div>
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-            {preparing.map((order: any) => (
-              <KdsCard
-                key={order.id}
-                order={order}
-                onUpdateStatus={updateStatus}
-                nextStatus="ready"
-                accentColor="oklch(0.63 0.18 290)"
-                urgency="medium"
-              />
-            ))}
-          </div>
-        </div>
+      {/* Desktop 3-Col Grid */}
+      <div className="hidden lg:grid grid-cols-3 gap-4 h-[calc(100vh-8rem)]">
+        {["pending", "preparing", "ready"].map((status) => {
+          const col = columnMap[status];
+          return (
+            <ColumnView
+              key={status}
+              orders={col.orders}
+              status={status}
+              nextStatus={col.nextStatus}
+              urgency={col.urgency}
+              onUpdateStatus={updateStatus}
+            />
+          );
+        })}
+      </div>
 
-        {/* Ready Column */}
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 mb-3 px-2">
-            <div className="w-3 h-3 rounded-full bg-accent" />
-            <h2 className="font-bold text-accent">Ready</h2>
-            <Badge variant="accent">{ready.length}</Badge>
-          </div>
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-            {ready.map((order: any) => (
-              <KdsCard
-                key={order.id}
-                order={order}
-                onUpdateStatus={updateStatus}
-                nextStatus="completed"
-                accentColor="oklch(0.58 0.12 195)"
-                urgency="low"
-              />
-            ))}
-          </div>
-        </div>
+      {/* Mobile Single Column (tabbed) */}
+      <div className="lg:hidden">
+        {["pending", "preparing", "ready"].map((status) => {
+          if (activeTab !== status) return null;
+          const col = columnMap[status];
+          return (
+            <ColumnView
+              key={status}
+              orders={col.orders}
+              status={status}
+              nextStatus={col.nextStatus}
+              urgency={col.urgency}
+              onUpdateStatus={updateStatus}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ColumnView({
+  orders,
+  status,
+  nextStatus,
+  urgency,
+  onUpdateStatus,
+}: {
+  orders: any[];
+  status: string;
+  nextStatus: string;
+  urgency: "high" | "medium" | "low";
+  onUpdateStatus: (id: string, status: string) => void;
+}) {
+  const accentMap: Record<string, string> = {
+    pending: "oklch(0.66 0.19 258.5)",
+    preparing: "oklch(0.63 0.18 290)",
+    ready: "oklch(0.58 0.12 195)",
+  };
+  const badgeVariant: Record<string, "default" | "secondary" | "accent"> = {
+    pending: "default",
+    preparing: "secondary",
+    ready: "accent",
+  };
+  const colors: Record<string, { dot: string; text: string }> = {
+    pending: { dot: "bg-primary", text: "text-primary" },
+    preparing: { dot: "bg-secondary", text: "text-secondary" },
+    ready: { dot: "bg-accent", text: "text-accent" },
+  };
+  const c = colors[status] || colors.pending;
+
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center gap-2 mb-3 px-2 lg:flex hidden">
+        <div className={`w-3 h-3 rounded-full ${c.dot} ${status === "pending" ? "animate-pulse" : ""}`} />
+        <h2 className={`font-bold ${c.text} capitalize`}>{status}</h2>
+        <Badge variant={badgeVariant[status] || "default"}>
+          {orders.length}
+        </Badge>
+      </div>
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[calc(100vh-12rem)] lg:max-h-none">
+        {orders.map((order: any) => (
+          <KdsCard
+            key={order.id}
+            order={order}
+            onUpdateStatus={onUpdateStatus}
+            nextStatus={nextStatus}
+            accentColor={accentMap[status]}
+            urgency={urgency}
+          />
+        ))}
+        {orders.length === 0 && (
+          <p className="text-muted-foreground text-sm text-center py-8">
+            No {status} orders
+          </p>
+        )}
       </div>
     </div>
   );
@@ -209,18 +326,24 @@ function KdsCard({
     addSuffix: true,
   });
 
-  const isUrgent = urgency === "high" &&
-    new Date().getTime() - new Date(order.created_at).getTime() > 5 * 60 * 1000;
+  const isUrgent =
+    urgency === "high" &&
+    new Date().getTime() - new Date(order.created_at).getTime() >
+      5 * 60 * 1000;
 
   return (
     <GlassCard
-      className="p-4"
-      style={{ borderColor: isUrgent ? "rgba(255, 93, 90, 0.5)" : undefined }}
+      className="p-3 sm:p-4"
+      style={
+        isUrgent
+          ? { borderColor: "rgba(255, 93, 90, 0.5)" }
+          : undefined
+      }
       neon={urgency === "high"}
     >
       <div className="flex items-start justify-between mb-2">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {order.table && (
               <span className="text-xs font-bold bg-muted px-2 py-0.5 rounded-full">
                 {order.table.table_number}
@@ -236,7 +359,7 @@ function KdsCard({
             </p>
           )}
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0 ml-2">
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <Clock className="w-3 h-3" />
             {elapsed}
@@ -256,7 +379,7 @@ function KdsCard({
               {oi.quantity}x {oi.menu_item?.name || "Item"}
             </span>
             {oi.notes && (
-              <span className="text-xs text-muted-foreground ml-2">
+              <span className="text-xs text-muted-foreground ml-2 truncate max-w-[120px]">
                 Note: {oi.notes}
               </span>
             )}
@@ -273,17 +396,25 @@ function KdsCard({
       {nextStatus !== "completed" && (
         <button
           onClick={() => onUpdateStatus(order.id, nextStatus)}
-          className="w-full mt-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all hover:opacity-90"
-          style={{ background: accentColor + "20", color: accentColor, border: `1px solid ${accentColor}40` }}
+          className="w-full mt-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all hover:opacity-90 min-h-[44px]"
+          style={{
+            background: accentColor + "20",
+            color: accentColor,
+            border: `1px solid ${accentColor}40`,
+          }}
         >
-          {nextStatus === "preparing" ? "Start Preparing" : nextStatus === "ready" ? "Mark Ready" : nextStatus}
+          {nextStatus === "preparing"
+            ? "Start Preparing"
+            : nextStatus === "ready"
+              ? "Mark Ready"
+              : nextStatus}
         </button>
       )}
 
       {nextStatus === "completed" && (
         <button
           onClick={() => onUpdateStatus(order.id, "completed")}
-          className="w-full mt-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-chart-4/15 text-chart-4 border border-chart-4/30 hover:bg-chart-4/25 transition-colors"
+          className="w-full mt-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-chart-4/15 text-chart-4 border border-chart-4/30 hover:bg-chart-4/25 transition-colors min-h-[44px]"
         >
           Complete Order
         </button>

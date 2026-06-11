@@ -57,10 +57,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-2">
-            <Gamepad2 className="w-10 h-10 text-primary" />
-            <span className="text-2xl font-extrabold tracking-tight">
+        <div className="text-center mb-6 sm:mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 mb-2"
+          >
+            <Gamepad2 className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+            <span className="text-xl sm:text-2xl font-extrabold tracking-tight">
               RR Cafe POS
             </span>
           </Link>
@@ -69,7 +72,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="glass-card rounded-2xl p-8">
+        <div className="glass-card rounded-2xl p-6 sm:p-8">
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <label className="block text-sm font-medium mb-1.5 text-muted-foreground">
@@ -82,8 +85,8 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-sm"
-                  placeholder="admin@rrdowntownarcade.in"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-sm min-h-[48px]"
+                  placeholder="admin@example.com"
                 />
               </div>
             </div>
@@ -99,7 +102,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-sm"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-muted border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors text-sm min-h-[48px]"
                   placeholder="••••••••"
                 />
               </div>
@@ -108,7 +111,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="neon-glow w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              className="neon-glow w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 min-h-[48px]"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? "Signing in..." : "Sign In"}

@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { GlassCard } from "@/components/ui/glass-card";
-import { DollarSign, TrendingUp, ShoppingBag, Star, Loader2 } from "lucide-react";
+import {
+  DollarSign,
+  TrendingUp,
+  ShoppingBag,
+  Star,
+  Loader2,
+} from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -30,7 +36,7 @@ export default function AnalyticsPage() {
   const { profile } = useAuthStore();
   const isSuperAdmin = profile?.role === "super_admin";
   const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
-  const [cafes, setCafes] = useState<{id:string, name:string}[]>([]);
+  const [cafes, setCafes] = useState<{ id: string; name: string }[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
@@ -38,9 +44,16 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (isSuperAdmin) {
-      supabase.from("cafes").select("id, name").eq("is_active", true).then(({data}) => {
-        if (data) { setCafes(data); if (data.length > 0) setSelectedCafeId(data[0].id); }
-      });
+      supabase
+        .from("cafes")
+        .select("id, name")
+        .eq("is_active", true)
+        .then(({ data }) => {
+          if (data) {
+            setCafes(data);
+            if (data.length > 0) setSelectedCafeId(data[0].id);
+          }
+        });
     }
   }, [isSuperAdmin]);
 
@@ -57,11 +70,20 @@ export default function AnalyticsPage() {
         .select("quantity, subtotal, menu_item:menu_items(name)")
         .not("order_id", "is", null);
 
-      if (!orders) { setLoading(false); return; }
+      if (!orders) {
+        setLoading(false);
+        return;
+      }
 
       const completed = orders.filter((o) => o.status !== "cancelled");
-      const totalRevenue = completed.reduce((s, o) => s + Number(o.total), 0);
-      const totalRoyalty = completed.reduce((s, o) => s + Number(o.royalty_amount), 0);
+      const totalRevenue = completed.reduce(
+        (s, o) => s + Number(o.total),
+        0
+      );
+      const totalRoyalty = completed.reduce(
+        (s, o) => s + Number(o.royalty_amount),
+        0
+      );
 
       const days: Record<string, { revenue: number; orders: number }> = {};
       completed.forEach((o) => {
@@ -75,10 +97,14 @@ export default function AnalyticsPage() {
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(-7);
 
-      const itemSales: Record<string, { name: string; qty: number; revenue: number }> = {};
+      const itemSales: Record<
+        string,
+        { name: string; qty: number; revenue: number }
+      > = {};
       items?.forEach((oi: any) => {
         const name = oi.menu_item?.name || "Unknown";
-        if (!itemSales[name]) itemSales[name] = { name, qty: 0, revenue: 0 };
+        if (!itemSales[name])
+          itemSales[name] = { name, qty: 0, revenue: 0 };
         itemSales[name].qty += oi.quantity;
         itemSales[name].revenue += Number(oi.subtotal);
       });
@@ -86,18 +112,24 @@ export default function AnalyticsPage() {
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 5);
 
-      const statusCounts = ["pending", "preparing", "ready", "completed"].map(
-        (s) => ({
-          name: s,
-          value: orders.filter((o) => o.status === s).length,
-        })
-      );
+      const statusCounts = [
+        "pending",
+        "preparing",
+        "ready",
+        "completed",
+      ].map((s) => ({
+        name: s,
+        value: orders.filter((o) => o.status === s).length,
+      }));
 
       setStats({
         totalOrders: completed.length,
         totalRevenue: Math.round(totalRevenue),
         netEarnings: Math.round(totalRevenue - totalRoyalty),
-        avgOrderValue: completed.length > 0 ? Math.round(totalRevenue / completed.length) : 0,
+        avgOrderValue:
+          completed.length > 0
+            ? Math.round(totalRevenue / completed.length)
+            : 0,
         revenueByDay,
         topItems,
         statusCounts,
@@ -116,10 +148,12 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Analytics
+        </h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           Performance insights and reports
         </p>
       </div>
@@ -133,58 +167,64 @@ export default function AnalyticsPage() {
             className="px-3 py-2 rounded-lg bg-muted border border-border text-sm outline-none"
           >
             {cafes.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <GlassCard>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-primary/15">
               <DollarSign className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Revenue</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xl sm:text-2xl font-bold">
                 ₹{(stats?.totalRevenue || 0).toLocaleString()}
               </p>
             </div>
           </div>
         </GlassCard>
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-accent/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-accent/15">
               <TrendingUp className="w-5 h-5 text-accent" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Net Earnings</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xl sm:text-2xl font-bold">
                 ₹{(stats?.netEarnings || 0).toLocaleString()}
               </p>
             </div>
           </div>
         </GlassCard>
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-secondary/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-secondary/15">
               <ShoppingBag className="w-5 h-5 text-secondary" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Orders</p>
-              <p className="text-2xl font-bold">{stats?.totalOrders || 0}</p>
+              <p className="text-xl sm:text-2xl font-bold">
+                {stats?.totalOrders || 0}
+              </p>
             </div>
           </div>
         </GlassCard>
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-chart-4/15">
+            <div className="p-2 sm:p-2.5 rounded-lg bg-chart-4/15">
               <Star className="w-5 h-5 text-chart-4" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Avg. Order Value</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xs text-muted-foreground">
+                Avg. Order Value
+              </p>
+              <p className="text-xl sm:text-2xl font-bold">
                 ₹{(stats?.avgOrderValue || 0).toLocaleString()}
               </p>
             </div>
@@ -192,34 +232,64 @@ export default function AnalyticsPage() {
         </GlassCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GlassCard>
-          <h3 className="text-lg font-semibold mb-4">Revenue (Last 7 Days)</h3>
-          <div className="h-64">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <GlassCard className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-4">
+            Revenue (Last 7 Days)
+          </h3>
+          <div className="h-52 sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats?.revenueByDay}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="date" stroke="#9e9e9e" fontSize={12} />
-                <YAxis stroke="#9e9e9e" fontSize={12} />
-                <Tooltip contentStyle={{ background: "rgba(5,5,10,0.95)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "0.75rem", color: "#f8f8f8" }} />
-                <Bar dataKey="revenue" fill="oklch(0.58 0.12 195)" radius={[4, 4, 0, 0]} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.05)"
+                />
+                <XAxis
+                  dataKey="date"
+                  stroke="#9e9e9e"
+                  fontSize={10}
+                  tickFormatter={(d) => {
+                    const parts = d.split("-");
+                    return `${parts[2] || ""}/${parts[1] || ""}`;
+                  }}
+                />
+                <YAxis stroke="#9e9e9e" fontSize={10} width={50} />
+                <Tooltip
+                  contentStyle={{
+                    background: "rgba(5,5,10,0.95)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: "0.75rem",
+                    color: "#f8f8f8",
+                    fontSize: "12px",
+                  }}
+                />
+                <Bar
+                  dataKey="revenue"
+                  fill="oklch(0.58 0.12 195)"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </GlassCard>
 
-        <GlassCard>
-          <h3 className="text-lg font-semibold mb-4">Top Selling Items</h3>
+        <GlassCard className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-4">
+            Top Selling Items
+          </h3>
           <div className="space-y-3">
             {stats?.topItems.map((item: any, i: number) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-muted-foreground w-5">
+              <div
+                key={i}
+                className="flex items-center justify-between gap-2"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-bold text-muted-foreground w-5 shrink-0">
                     #{i + 1}
                   </span>
-                  <span className="text-sm">{item.name}</span>
+                  <span className="text-sm truncate">{item.name}</span>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <p className="text-sm font-semibold">
                     ₹{item.revenue.toLocaleString()}
                   </p>
@@ -230,31 +300,40 @@ export default function AnalyticsPage() {
               </div>
             ))}
             {(!stats?.topItems || stats.topItems.length === 0) && (
-              <p className="text-muted-foreground text-sm">No data yet</p>
+              <p className="text-muted-foreground text-sm">
+                No data yet
+              </p>
             )}
           </div>
         </GlassCard>
       </div>
 
-      <GlassCard>
-        <h3 className="text-lg font-semibold mb-4">Order Status Breakdown</h3>
-        <div className="flex items-center gap-8">
-          <div className="h-48 w-48">
+      <GlassCard className="p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold mb-4">
+          Order Status Breakdown
+        </h3>
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
+          <div className="h-40 w-40 sm:h-48 sm:w-48 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={stats?.statusCounts.filter((s: any) => s.value > 0)}
+                  data={stats?.statusCounts.filter(
+                    (s: any) => s.value > 0
+                  )}
                   cx="50%"
                   cy="50%"
-                  innerRadius={40}
-                  outerRadius={80}
+                  innerRadius={35}
+                  outerRadius={70}
                   dataKey="value"
                   label={({ name, value }) => `${name}: ${value}`}
                 >
                   {stats?.statusCounts
                     .filter((s: any) => s.value > 0)
                     .map((_: any, idx: number) => (
-                      <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                      <Cell
+                        key={idx}
+                        fill={COLORS[idx % COLORS.length]}
+                      />
                     ))}
                 </Pie>
                 <Tooltip />
@@ -265,7 +344,7 @@ export default function AnalyticsPage() {
             {stats?.statusCounts.map((s: any, i: number) => (
               <div key={i} className="flex items-center gap-2">
                 <div
-                  className="w-3 h-3 rounded-full"
+                  className="w-3 h-3 rounded-full shrink-0"
                   style={{ background: COLORS[i] }}
                 />
                 <span className="text-sm capitalize">{s.name}:</span>

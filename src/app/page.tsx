@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect } from "react";
-import { Gamepad2, ArrowRight, QrCode, ShoppingCart, ChefHat } from "lucide-react";
+import { Gamepad2, ArrowRight, QrCode, ShoppingCart, ChefHat, UserPlus } from "lucide-react";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -56,7 +56,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl w-full">
         <Link
           href="/menu"
           className="glass-card rounded-xl p-6 text-center hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group"
@@ -65,6 +65,17 @@ export default function HomePage() {
           <h3 className="font-semibold mb-1">Customer Menu</h3>
           <p className="text-xs text-muted-foreground">
             Scan QR to order
+          </p>
+        </Link>
+
+        <Link
+          href="/auth/signup"
+          className="glass-card rounded-xl p-6 text-center hover:border-accent/50 hover:shadow-lg hover:shadow-accent/10 transition-all duration-300 group"
+        >
+          <UserPlus className="w-8 h-8 text-accent mx-auto mb-3 group-hover:scale-110 transition-transform" />
+          <h3 className="font-semibold mb-1">Customer Sign Up</h3>
+          <p className="text-xs text-muted-foreground">
+            Create an account to order
           </p>
         </Link>
 

@@ -6,7 +6,12 @@ import { useEffect, useState, use } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
-import type { Cafe, MenuCategory, MenuItem, CafeTable } from "@/types/database";
+import type {
+  Cafe,
+  MenuCategory,
+  MenuItem,
+  CafeTable,
+} from "@/types/database";
 import {
   Minus,
   Plus,
@@ -16,6 +21,8 @@ import {
   User,
   Phone,
   Send,
+  X,
+  ChevronUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -51,7 +58,9 @@ export default function CafeMenuPage({
   const [selectedTableId, setSelectedTableId] = useState<string | null>(
     searchParams.get("table_id") || null
   );
-  const [tableNumber, setTableNumber] = useState(searchParams.get("table") || "");
+  const [tableNumber, setTableNumber] = useState(
+    searchParams.get("table") || ""
+  );
   const [placingOrder, setPlacingOrder] = useState(false);
 
   const supabase = createClient();
@@ -109,7 +118,9 @@ export default function CafeMenuPage({
       const existing = prev.find((ci) => ci.item.id === item.id);
       if (existing)
         return prev.map((ci) =>
-          ci.item.id === item.id ? { ...ci, quantity: ci.quantity + 1 } : ci
+          ci.item.id === item.id
+            ? { ...ci, quantity: ci.quantity + 1 }
+            : ci
         );
       return [...prev, { item, quantity: 1, notes: "" }];
     });
@@ -125,7 +136,9 @@ export default function CafeMenuPage({
       return;
     }
     setCart((prev) =>
-      prev.map((ci) => (ci.item.id === itemId ? { ...ci, quantity: qty } : ci))
+      prev.map((ci) =>
+        ci.item.id === itemId ? { ...ci, quantity: qty } : ci
+      )
     );
   };
 
@@ -195,9 +208,12 @@ export default function CafeMenuPage({
         });
       }
 
-      toast.success("Order placed successfully! Your order will be prepared soon.");
+      toast.success(
+        "Order placed successfully! Your order will be prepared soon."
+      );
       setCart([]);
       setShowForm(false);
+      setShowCart(false);
       setCustomerName("");
       setCustomerPhone("");
     } catch (err: any) {
@@ -219,12 +235,12 @@ export default function CafeMenuPage({
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
         <h2 className="text-xl font-bold mb-2">Cafe Not Found</h2>
-        <p className="text-muted-foreground mb-4">
+        <p className="text-muted-foreground mb-4 text-sm">
           This cafe does not exist or is not active.
         </p>
         <Link
           href="/menu"
-          className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm"
+          className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm min-h-[44px] inline-flex items-center"
         >
           View All Cafes
         </Link>
@@ -232,21 +248,25 @@ export default function CafeMenuPage({
     );
   }
 
+  const cartCount = getCartCount();
+
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen p-3 sm:p-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Link href="/menu" className="text-muted-foreground hover:text-foreground">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link
+              href="/menu"
+              className="text-muted-foreground hover:text-foreground shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <div>
-              <h1 className="text-2xl font-extrabold tracking-tight">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate">
                 {cafe.name}
               </h1>
               {cafe.description && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate">
                   {cafe.description}
                 </p>
               )}
@@ -254,22 +274,21 @@ export default function CafeMenuPage({
           </div>
           <button
             onClick={() => setShowCart(!showCart)}
-            className="relative neon-glow px-4 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center gap-2"
+            className="relative neon-glow px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center gap-2 shrink-0 ml-2 min-h-[44px]"
           >
             <ShoppingCart className="w-4 h-4" />
-            {getCartCount() > 0 && (
+            {cartCount > 0 && (
               <span className="absolute -top-2 -right-2 w-5 h-5 bg-destructive rounded-full text-xs flex items-center justify-center font-bold">
-                {getCartCount()}
+                {cartCount}
               </span>
             )}
           </button>
         </div>
 
-        {/* Categories */}
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-4">
+        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-3 mb-4 -mx-1 px-1">
           <button
             onClick={() => setSelectedCat(null)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
+            className={`px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap min-h-[36px] ${
               !selectedCat
                 ? "bg-primary/20 text-primary border border-primary/30"
                 : "bg-muted text-muted-foreground border border-border"
@@ -281,7 +300,7 @@ export default function CafeMenuPage({
             <button
               key={cat.id}
               onClick={() => setSelectedCat(cat.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
+              className={`px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap min-h-[36px] ${
                 selectedCat === cat.id
                   ? "bg-primary/20 text-primary border border-primary/30"
                   : "bg-muted text-muted-foreground border border-border"
@@ -292,28 +311,30 @@ export default function CafeMenuPage({
           ))}
         </div>
 
-        {/* Menu Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
           {filteredItems.map((item) => (
             <button
               key={item.id}
               onClick={() => addToCart(item)}
-              className="glass-card rounded-xl p-3 text-left hover:border-primary/50 transition-all duration-200 active:scale-95"
+              className="glass-card rounded-xl p-2 sm:p-3 text-left hover:border-primary/50 transition-all duration-200 active:scale-95 min-h-[44px]"
             >
               {item.image_url && (
-                <div className="h-28 rounded-lg overflow-hidden mb-2 bg-muted">
+                <div className="h-24 sm:h-28 rounded-lg overflow-hidden mb-2 bg-muted">
                   <img
                     src={item.image_url}
                     alt={item.name}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 </div>
               )}
-              <p className="text-sm font-semibold truncate">{item.name}</p>
+              <p className="text-xs sm:text-sm font-semibold truncate">
+                {item.name}
+              </p>
               <p className="text-xs text-muted-foreground truncate mt-0.5">
                 {item.description}
               </p>
-              <p className="text-primary font-bold mt-1">
+              <p className="text-primary font-bold text-sm mt-1">
                 ₹{Number(item.price).toFixed(0)}
               </p>
             </button>
@@ -321,40 +342,55 @@ export default function CafeMenuPage({
         </div>
       </div>
 
-      {/* Cart Drawer */}
+      {/* Cart Bottom Sheet (Mobile) / Drawer (Desktop) */}
       {showCart && (
         <>
           <div
             className="fixed inset-0 bg-black/60 z-40"
             onClick={() => setShowCart(false)}
           />
-          <div className="fixed inset-y-0 right-0 w-full max-w-md glass-card rounded-l-2xl z-50 flex flex-col">
+          <div className="fixed inset-x-0 bottom-0 z-50 sm:inset-y-0 sm:right-0 sm:left-auto sm:w-full sm:max-w-md glass-card rounded-t-2xl sm:rounded-l-2xl sm:rounded-t-none max-h-[85vh] sm:max-h-full flex flex-col">
+            {/* Drag handle (mobile only) */}
+            <div className="flex items-center justify-center pt-2 pb-1 sm:hidden">
+              <button
+                onClick={() => setShowCart(false)}
+                className="p-1 rounded-full hover:bg-muted min-h-[44px] min-w-[44px] flex items-center justify-center"
+              >
+                <ChevronUp className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            {/* Header */}
             <div className="p-4 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-bold">Your Order</h2>
               <button
                 onClick={() => setShowCart(false)}
-                className="text-muted-foreground"
+                className="text-muted-foreground p-2 rounded-lg hover:bg-muted min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {cart.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
+                <p className="text-muted-foreground text-center py-8 text-sm">
                   Cart is empty
                 </p>
               ) : (
                 cart.map((ci) => (
-                  <div key={ci.item.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <div
+                    key={ci.item.id}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
+                  >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
                         {ci.item.name}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <button
-                          onClick={() => updateQty(ci.item.id, ci.quantity - 1)}
-                          className="p-0.5 rounded bg-muted"
+                          onClick={() =>
+                            updateQty(ci.item.id, ci.quantity - 1)
+                          }
+                          className="p-1.5 rounded bg-muted hover:bg-muted/80 min-w-[36px] min-h-[36px] flex items-center justify-center"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
@@ -362,14 +398,16 @@ export default function CafeMenuPage({
                           {ci.quantity}
                         </span>
                         <button
-                          onClick={() => updateQty(ci.item.id, ci.quantity + 1)}
-                          className="p-0.5 rounded bg-muted"
+                          onClick={() =>
+                            updateQty(ci.item.id, ci.quantity + 1)
+                          }
+                          className="p-1.5 rounded bg-muted hover:bg-muted/80 min-w-[36px] min-h-[36px] flex items-center justify-center"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <p className="text-sm font-semibold">
                         ₹{(ci.item.price * ci.quantity).toFixed(0)}
                       </p>
@@ -399,7 +437,7 @@ export default function CafeMenuPage({
                 {!showForm ? (
                   <button
                     onClick={() => setShowForm(true)}
-                    className="neon-glow w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm"
+                    className="neon-glow w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm min-h-[48px]"
                   >
                     Proceed to Order
                   </button>
@@ -413,8 +451,10 @@ export default function CafeMenuPage({
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input
                           value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                          onChange={(e) =>
+                            setCustomerName(e.target.value)
+                          }
+                          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
                           placeholder="Enter your name"
                         />
                       </div>
@@ -427,9 +467,11 @@ export default function CafeMenuPage({
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input
                           value={customerPhone}
-                          onChange={(e) => setCustomerPhone(e.target.value)}
+                          onChange={(e) =>
+                            setCustomerPhone(e.target.value)
+                          }
                           type="tel"
-                          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
                           placeholder="Enter phone number"
                         />
                       </div>
@@ -442,12 +484,19 @@ export default function CafeMenuPage({
                         {tables.length > 0 ? (
                           <select
                             value={tableNumber}
-                            onChange={(e) => setTableNumber(e.target.value)}
-                            className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border outline-none text-sm"
+                            onChange={(e) =>
+                              setTableNumber(e.target.value)
+                            }
+                            className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border outline-none text-sm min-h-[44px]"
                           >
-                            <option value="">Select your table</option>
+                            <option value="">
+                              Select your table
+                            </option>
                             {tables.map((t) => (
-                              <option key={t.id} value={t.table_number}>
+                              <option
+                                key={t.id}
+                                value={t.table_number}
+                              >
                                 {t.table_number}
                               </option>
                             ))}
@@ -455,8 +504,10 @@ export default function CafeMenuPage({
                         ) : (
                           <input
                             value={tableNumber}
-                            onChange={(e) => setTableNumber(e.target.value)}
-                            className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                            onChange={(e) =>
+                              setTableNumber(e.target.value)
+                            }
+                            className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
                             placeholder="Enter your table number"
                           />
                         )}
@@ -465,14 +516,16 @@ export default function CafeMenuPage({
                     <button
                       onClick={handlePlaceOrder}
                       disabled={placingOrder}
-                      className="neon-glow w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="neon-glow w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 min-h-[48px]"
                     >
                       {placingOrder ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Send className="w-4 h-4" />
                       )}
-                      {placingOrder ? "Placing Order..." : "Place Order"}
+                      {placingOrder
+                        ? "Placing Order..."
+                        : "Place Order"}
                     </button>
                   </div>
                 )}

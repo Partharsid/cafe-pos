@@ -140,7 +140,28 @@
       0 0 45px var(--primary);
   }
 
+  .neon-text {
+    text-shadow: 0 0 8px var(--primary), 0 0 16px var(--primary);
+  }
+
   .arcade-bg {
     background: linear-gradient(135deg, #020202 0%, #00030f 100%);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  @keyframes slide-in-left {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-slide-in-left {
+    animation: slide-in-left 0.25s ease-out;
   }
 }

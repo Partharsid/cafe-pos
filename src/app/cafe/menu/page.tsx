@@ -21,11 +21,13 @@ export default function MenuManagement() {
   const { profile } = useAuthStore();
   const isSuperAdmin = profile?.role === "super_admin";
   const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
-  const [cafes, setCafes] = useState<{id:string, name:string}[]>([]);
+  const [cafes, setCafes] = useState<{ id: string; name: string }[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingCat, setEditingCat] = useState<Partial<MenuCategory> | null>(null);
+  const [editingCat, setEditingCat] = useState<Partial<MenuCategory> | null>(
+    null
+  );
   const [editingItem, setEditingItem] = useState<Partial<MenuItem> | null>(null);
   const [showAddCat, setShowAddCat] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
@@ -34,9 +36,16 @@ export default function MenuManagement() {
 
   useEffect(() => {
     if (isSuperAdmin) {
-      supabase.from("cafes").select("id, name").eq("is_active", true).then(({data}) => {
-        if (data) { setCafes(data); if (data.length > 0) setSelectedCafeId(data[0].id); }
-      });
+      supabase
+        .from("cafes")
+        .select("id, name")
+        .eq("is_active", true)
+        .then(({ data }) => {
+          if (data) {
+            setCafes(data);
+            if (data.length > 0) setSelectedCafeId(data[0].id);
+          }
+        });
     }
   }, [isSuperAdmin]);
 
@@ -151,21 +160,23 @@ export default function MenuManagement() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Menu Management</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Menu Management
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
             Manage categories, items, prices, and stock
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => {
               setShowAddCat(true);
               setEditingCat({ name: "" });
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm hover:bg-muted transition-colors min-h-[44px]"
           >
             <Plus className="w-4 h-4" /> Category
           </button>
@@ -178,7 +189,7 @@ export default function MenuManagement() {
                 category_id: categories[0]?.id || "",
               });
             }}
-            className="neon-glow flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-sm"
+            className="neon-glow flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm min-h-[44px]"
           >
             <Plus className="w-4 h-4" /> Add Item
           </button>
@@ -194,14 +205,16 @@ export default function MenuManagement() {
             className="px-3 py-2 rounded-lg bg-muted border border-border text-sm outline-none"
           >
             {cafes.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
       )}
 
       {(showAddCat || editingCat) && (
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <h3 className="font-semibold mb-3">
             {editingCat?.id ? "Edit Category" : "New Category"}
           </h3>
@@ -211,12 +224,12 @@ export default function MenuManagement() {
               onChange={(e) =>
                 setEditingCat((f) => ({ ...f, name: e.target.value }))
               }
-              className="flex-1 px-3 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+              className="flex-1 px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
               placeholder="Category name"
             />
             <button
               onClick={handleSaveCategory}
-              className="p-2 rounded-lg bg-primary text-primary-foreground"
+              className="p-2.5 rounded-lg bg-primary text-primary-foreground min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <Save className="w-4 h-4" />
             </button>
@@ -225,7 +238,7 @@ export default function MenuManagement() {
                 setEditingCat(null);
                 setShowAddCat(false);
               }}
-              className="p-2 rounded-lg border border-border"
+              className="p-2.5 rounded-lg border border-border min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X className="w-4 h-4" />
             </button>
@@ -234,11 +247,11 @@ export default function MenuManagement() {
       )}
 
       {(showAddItem || editingItem) && (
-        <GlassCard>
+        <GlassCard className="p-4 sm:p-6">
           <h3 className="font-semibold mb-4">
             {editingItem?.id ? "Edit Item" : "New Item"}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs text-muted-foreground mb-1">
                 Name *
@@ -248,7 +261,7 @@ export default function MenuManagement() {
                 onChange={(e) =>
                   setEditingItem((f) => ({ ...f, name: e.target.value }))
                 }
-                className="w-full px-3 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
               />
             </div>
             <div>
@@ -258,9 +271,12 @@ export default function MenuManagement() {
               <select
                 value={editingItem?.category_id || ""}
                 onChange={(e) =>
-                  setEditingItem((f) => ({ ...f, category_id: e.target.value }))
+                  setEditingItem((f) => ({
+                    ...f,
+                    category_id: e.target.value,
+                  }))
                 }
-                className="w-full px-3 py-2 rounded-lg bg-muted border border-border outline-none text-sm"
+                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border outline-none text-sm min-h-[44px]"
               >
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -284,7 +300,7 @@ export default function MenuManagement() {
                     price: parseFloat(e.target.value) || 0,
                   }))
                 }
-                className="w-full px-3 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
               />
             </div>
             <div>
@@ -294,9 +310,12 @@ export default function MenuManagement() {
               <input
                 value={editingItem?.image_url || ""}
                 onChange={(e) =>
-                  setEditingItem((f) => ({ ...f, image_url: e.target.value }))
+                  setEditingItem((f) => ({
+                    ...f,
+                    image_url: e.target.value,
+                  }))
                 }
-                className="w-full px-3 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
                 placeholder="https://..."
               />
             </div>
@@ -315,7 +334,7 @@ export default function MenuManagement() {
                       e.target.value === "" ? null : parseInt(e.target.value),
                   }))
                 }
-                className="w-full px-3 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
               />
             </div>
             <div>
@@ -332,24 +351,27 @@ export default function MenuManagement() {
                     low_stock_threshold: parseInt(e.target.value) || 5,
                   }))
                 }
-                className="w-full px-3 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
               />
             </div>
-            <div className="md:col-span-2">
+            <div className="sm:col-span-2">
               <label className="block text-xs text-muted-foreground mb-1">
                 Description
               </label>
               <textarea
                 value={editingItem?.description || ""}
                 onChange={(e) =>
-                  setEditingItem((f) => ({ ...f, description: e.target.value }))
+                  setEditingItem((f) => ({
+                    ...f,
+                    description: e.target.value,
+                  }))
                 }
-                className="w-full px-3 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+                className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
                 rows={2}
               />
             </div>
-            <div className="flex items-center gap-2 md:col-span-2">
-              <label className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 sm:col-span-2">
+              <label className="flex items-center gap-2 text-sm min-h-[44px]">
                 <input
                   type="checkbox"
                   checked={editingItem?.is_available ?? true}
@@ -368,7 +390,7 @@ export default function MenuManagement() {
           <div className="flex gap-2 mt-4">
             <button
               onClick={handleSaveItem}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold min-h-[44px]"
             >
               <Save className="w-4 h-4" />
               {editingItem?.id ? "Update" : "Create"}
@@ -378,7 +400,7 @@ export default function MenuManagement() {
                 setEditingItem(null);
                 setShowAddItem(false);
               }}
-              className="px-4 py-2 rounded-lg border border-border text-sm"
+              className="px-4 py-2.5 rounded-lg border border-border text-sm min-h-[44px]"
             >
               Cancel
             </button>
@@ -391,33 +413,36 @@ export default function MenuManagement() {
         return (
           <div key={cat.id}>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xl font-bold">{cat.name}</h2>
+              <h2 className="text-lg sm:text-xl font-bold">{cat.name}</h2>
               <div className="flex gap-1">
                 <button
-                  onClick={() => setEditingCat({ id: cat.id, name: cat.name })}
-                  className="p-1.5 rounded hover:bg-muted transition-colors"
+                  onClick={() =>
+                    setEditingCat({ id: cat.id, name: cat.name })
+                  }
+                  className="p-2 rounded hover:bg-muted transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                 >
                   <Edit3 className="w-4 h-4 text-muted-foreground" />
                 </button>
                 <button
                   onClick={() => handleDeleteCategory(cat.id)}
-                  className="p-1.5 rounded hover:bg-destructive/15 transition-colors"
+                  className="p-2 rounded hover:bg-destructive/15 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {catItems.map((item) => (
-                <GlassCard key={item.id} className="p-4">
+                <GlassCard key={item.id} className="p-3 sm:p-4">
                   <div className="flex items-start gap-3">
                     {item.image_url && (
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted shrink-0">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-muted shrink-0">
                         <img
                           src={item.image_url}
                           alt={item.name}
                           className="w-full h-full object-cover"
+                          loading="lazy"
                         />
                       </div>
                     )}
@@ -438,16 +463,17 @@ export default function MenuManagement() {
                                 image_url: item.image_url,
                                 is_available: item.is_available,
                                 stock_quantity: item.stock_quantity,
-                                low_stock_threshold: item.low_stock_threshold,
+                                low_stock_threshold:
+                                  item.low_stock_threshold,
                               })
                             }
-                            className="p-1 rounded hover:bg-muted"
+                            className="p-1.5 rounded hover:bg-muted min-h-[32px] min-w-[32px] flex items-center justify-center"
                           >
                             <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
                           </button>
                           <button
                             onClick={() => handleDeleteItem(item.id)}
-                            className="p-1 rounded hover:bg-destructive/15"
+                            className="p-1.5 rounded hover:bg-destructive/15 min-h-[32px] min-w-[32px] flex items-center justify-center"
                           >
                             <Trash2 className="w-3.5 h-3.5 text-destructive" />
                           </button>
@@ -456,14 +482,15 @@ export default function MenuManagement() {
                       <p className="text-primary font-bold text-sm">
                         ₹{Number(item.price).toFixed(0)}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {!item.is_available && (
                           <Badge variant="destructive">Off</Badge>
                         )}
                         {item.stock_quantity !== null && (
                           <Badge
                             variant={
-                              item.stock_quantity <= item.low_stock_threshold
+                              item.stock_quantity <=
+                              item.low_stock_threshold
                                 ? "warning"
                                 : "default"
                             }
