@@ -31,8 +31,10 @@ import {
   PanelLeft,
   SlidersHorizontal,
   AlertTriangle,
+  PlusCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type SortMode = "name" | "price-asc" | "price-desc" | "newest" | "popular";
 
@@ -1196,67 +1198,38 @@ export default function MenuManagement() {
         </div>
       )}
 
-      {/* --- Delete Item Confirmation Modal --- */}
-      {deleteItemTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60" onClick={() => setDeleteItemTarget(null)} />
-          <GlassCard className="relative z-50 w-full max-w-sm p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-6 h-6 text-destructive" />
-            </div>
-            <h3 className="text-lg font-bold mb-1">Delete Item</h3>
-            <p className="text-muted-foreground text-sm mb-5">
-              Are you sure you want to delete &ldquo;{deleteItemTarget.name}&rdquo;? This action cannot be undone.
-            </p>
-            <div className="flex gap-2 justify-center">
-              <button
-                onClick={() => setDeleteItemTarget(null)}
-                className="px-4 py-2 rounded-lg border border-border text-sm min-h-[44px] hover:bg-muted"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteItem}
-                disabled={working}
-                className="px-4 py-2 rounded-lg bg-destructive text-white text-sm font-semibold min-h-[44px] disabled:opacity-50"
-              >
-                {working ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Delete"}
-              </button>
-            </div>
-          </GlassCard>
-        </div>
-      )}
+      {/* --- Delete Item Confirmation --- */}
+      <ConfirmDialog
+        open={!!deleteItemTarget}
+        onOpenChange={(open) => { if (!open) setDeleteItemTarget(null); }}
+        title="Delete Item"
+        message={<>Are you sure you want to delete &ldquo;{deleteItemTarget?.name}&rdquo;? This action cannot be undone.</>}
+        confirmText="Delete"
+        variant="danger"
+        loading={working}
+        onConfirm={handleDeleteItem}
+      />
 
-      {/* --- Delete Category Confirmation Modal --- */}
-      {deleteCategoryTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60" onClick={() => setDeleteCategoryTarget(null)} />
-          <GlassCard className="relative z-50 w-full max-w-sm p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-6 h-6 text-destructive" />
-            </div>
-            <h3 className="text-lg font-bold mb-1">Delete Category</h3>
-            <p className="text-muted-foreground text-sm mb-5">
-              Delete &ldquo;{deleteCategoryTarget.name}&rdquo; and all {categoryItemCounts[deleteCategoryTarget.id] || 0} items in it? This cannot be undone.
-            </p>
-            <div className="flex gap-2 justify-center">
-              <button
-                onClick={() => setDeleteCategoryTarget(null)}
-                className="px-4 py-2 rounded-lg border border-border text-sm min-h-[44px] hover:bg-muted"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteCategory}
-                disabled={working}
-                className="px-4 py-2 rounded-lg bg-destructive text-white text-sm font-semibold min-h-[44px] disabled:opacity-50"
-              >
-                {working ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Delete All"}
-              </button>
-            </div>
-          </GlassCard>
-        </div>
-      )}
+      {/* --- Delete Category Confirmation --- */}
+      <ConfirmDialog
+        open={!!deleteCategoryTarget}
+        onOpenChange={(open) => { if (!open) setDeleteCategoryTarget(null); }}
+        title="Delete Category"
+        message={<>Delete &ldquo;{deleteCategoryTarget?.name}&rdquo; and all {deleteCategoryTarget ? categoryItemCounts[deleteCategoryTarget.id] || 0 : 0} items in it? This cannot be undone.</>}
+        confirmText="Delete All"
+        variant="danger"
+        loading={working}
+        onConfirm={handleDeleteCategory}
+      />
+
+      {/* Add Item FAB */}
+      <button
+        onClick={() => startEditItem()}
+        className="fixed bottom-20 lg:bottom-6 right-4 z-40 neon-glow flex items-center gap-2 px-5 py-3 rounded-full bg-primary text-primary-foreground font-bold text-sm shadow-lg shadow-primary/25 hover:scale-105 active:scale-95 transition-all min-h-[48px]"
+      >
+        <PlusCircle className="w-5 h-5" />
+        Add Item
+      </button>
     </div>
   );
 }

@@ -62,7 +62,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (role === "cashier") {
-    if (path.startsWith("/admin") || path.startsWith("/cafe")) {
+    if (path.startsWith("/admin")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/counter";
+      return NextResponse.redirect(url);
+    }
+    if (path.startsWith("/cafe") && !path.startsWith("/cafe/orders") && !path.startsWith("/cafe/pos")) {
       const url = request.nextUrl.clone();
       url.pathname = "/counter";
       return NextResponse.redirect(url);

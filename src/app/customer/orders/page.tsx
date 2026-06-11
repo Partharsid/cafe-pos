@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
-import { Gamepad2, Loader2, Clock, ShoppingBag } from "lucide-react";
+import { Gamepad2, Loader2, Clock, ShoppingBag, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { Order, OrderItem, MenuItem } from "@/types/database";
 import { format } from "date-fns";
@@ -100,7 +100,14 @@ export default function CustomerOrdersPage() {
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-6 mt-4">
+        <Link
+          href="/menu"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4 min-h-[44px]"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Menu
+        </Link>
+        <div className="flex items-center gap-3 mb-6">
           <ShoppingBag className="w-6 h-6 text-primary" />
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight">

@@ -26,7 +26,9 @@ import {
   ArrowDown,
   Calendar,
   Zap,
+  FileDown,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format, isToday, isYesterday, startOfWeek, startOfDay, endOfDay } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -59,6 +61,7 @@ const typeIcons: Record<string, React.ReactNode> = {
 
 export default function OrdersPage() {
   const { profile } = useAuthStore();
+  const router = useRouter();
   const isSuperAdmin = profile?.role === "super_admin";
   const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
   const [cafes, setCafes] = useState<{ id: string; name: string }[]>([]);
@@ -548,7 +551,8 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
         {visibleOrders.map((order: any) => (
           <GlassCard
             key={order.id}
-            className={`p-3 sm:p-4 transition-all duration-300 group ${
+            onClick={() => router.push(`/cafe/orders/${order.id}`)}
+            className={`p-3 sm:p-4 transition-all duration-300 group cursor-pointer ${
               selectedOrderIds.has(order.id)
                 ? "ring-2 ring-primary/50 border-primary/30"
                 : "hover:border-white/20"
@@ -579,12 +583,11 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
                 </button>
 
                 <div className="min-w-0">
-                  <a
-                    href={`/cafe/orders/${order.id}`}
-                    className="text-sm font-bold text-primary hover:underline truncate block"
+                  <span
+                    className="text-sm font-bold text-primary truncate block"
                   >
                     #{order.id.slice(-8)}
-                  </a>
+                  </span>
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                     <Badge variant={statusColors[order.status] || "default"} className="gap-1">
                       {statusIcons[order.status]}
@@ -627,7 +630,7 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
             {/* Expandable Items */}
             <div className="border-t border-border pt-2.5">
               <button
-                onClick={() => toggleExpand(order.id)}
+                onClick={(e) => { e.stopPropagation(); toggleExpand(order.id); }}
                 className="flex items-center justify-between w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
               >
                 <span>
@@ -669,7 +672,7 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
                 <>
                   {order.status === "pending" && (
                     <button
-                      onClick={() => updateStatus(order.id, "preparing")}
+                      onClick={(e) => { e.stopPropagation(); updateStatus(order.id, "preparing"); }}
                       className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium bg-secondary/15 text-secondary hover:bg-secondary/25 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[36px]"
                     >
                       <ChefHat className="w-3.5 h-3.5" /> Preparing
@@ -677,14 +680,14 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
                   )}
                   {(order.status === "pending" || order.status === "preparing") && (
                     <button
-                      onClick={() => updateStatus(order.id, "ready")}
+                      onClick={(e) => { e.stopPropagation(); updateStatus(order.id, "ready"); }}
                       className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium bg-accent/15 text-accent hover:bg-accent/25 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[36px]"
                     >
                       <CheckCircle className="w-3.5 h-3.5" /> Ready
                     </button>
                   )}
                   <button
-                    onClick={() => updateStatus(order.id, "completed")}
+                    onClick={(e) => { e.stopPropagation(); updateStatus(order.id, "completed"); }}
                     className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium bg-chart-4/15 text-chart-4 hover:bg-chart-4/25 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[36px]"
                   >
                     <CheckCircle className="w-3.5 h-3.5" /> Complete
@@ -692,7 +695,7 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
                 </>
               )}
               <button
-                onClick={() => handlePrintOrder(order)}
+                onClick={(e) => { e.stopPropagation(); handlePrintOrder(order); }}
                 className="flex items-center justify-center gap-1 px-2.5 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-all min-h-[36px] ml-auto shrink-0"
                 title="Print receipt"
               >
@@ -754,6 +757,15 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
           </button>
         </div>
       )}
+
+      {/* Export FAB */}
+      <button
+        onClick={exportCSV}
+        className="fixed bottom-20 lg:bottom-6 right-4 z-40 neon-glow flex items-center gap-2 px-5 py-3 rounded-full bg-primary text-primary-foreground font-bold text-sm shadow-lg shadow-primary/25 hover:scale-105 active:scale-95 transition-all min-h-[48px]"
+      >
+        <FileDown className="w-5 h-5" />
+        Export
+      </button>
     </div>
   );
 }

@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   Clock,
   Printer,
+  PlusCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -484,9 +485,14 @@ export default function POSPage() {
       <div className="flex-1 flex flex-col space-y-3 min-w-0 overflow-hidden">
         {/* Top Bar */}
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap shrink-0">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-            POS
-          </h1>
+          <div className="shrink-0">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+              POS
+            </h1>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
+              Take orders and process payments
+            </p>
+          </div>
 
           {/* Search */}
           <div className="relative flex-1 min-w-[160px]">
@@ -775,6 +781,22 @@ export default function POSPage() {
           onClose={() => setSuccessOrder(null)}
         />
       )}
+
+      {/* New Order FAB */}
+      <button
+        onClick={() => {
+          clearCart();
+          setSelectedTable(null);
+          setOrderNotes("");
+          setSearch("");
+          setSelectedCategory(null);
+          toast.success("Ready for new order");
+        }}
+        className="fixed bottom-20 lg:bottom-6 right-4 z-40 neon-glow flex items-center gap-2 px-5 py-3 rounded-full bg-primary text-primary-foreground font-bold text-sm shadow-lg shadow-primary/25 hover:scale-105 active:scale-95 transition-all min-h-[48px]"
+      >
+        <PlusCircle className="w-5 h-5" />
+        New Order
+      </button>
     </div>
   );
 }

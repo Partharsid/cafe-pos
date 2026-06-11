@@ -136,7 +136,7 @@ export default function OrderDetailPage() {
           const newStatus = (payload.new as any).status;
           if (newStatus) {
             toast.success(`Order status updated to: ${newStatus}`, {
-              icon: statusIcons[newStatus] || "✅",
+              icon: "✅",
             });
           }
         }

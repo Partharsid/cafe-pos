@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Gamepad2, Mail, Lock, Loader2 } from "lucide-react";
+import { Shield, Mail, Lock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -54,22 +54,40 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = () => {
+    toast("Please contact your administrator to reset your password.", {
+      icon: "🔒",
+    });
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6 sm:mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 mb-2"
-          >
-            <Gamepad2 className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
-            <span className="text-xl sm:text-2xl font-extrabold tracking-tight">
-              RR Cafe POS
-            </span>
-          </Link>
+          <div className="inline-flex items-center gap-2 mb-2">
+            <Shield className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+              Staff Login
+            </h1>
+          </div>
           <p className="text-muted-foreground text-sm">
             Sign in to your dashboard
           </p>
+        </div>
+
+        <div className="flex items-center justify-center gap-4 mb-4">
+          <Link
+            href="/menu"
+            className="text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            Customer? Order here →
+          </Link>
+          <Link
+            href="/auth/signup"
+            className="text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            Create an account
+          </Link>
         </div>
 
         <div className="glass-card rounded-2xl p-6 sm:p-8">
@@ -92,9 +110,18 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5 text-muted-foreground">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
@@ -117,6 +144,19 @@ export default function LoginPage() {
               {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
+
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            Don&apos;t have an account? Contact your administrator
+          </p>
+
+          <div className="text-center mt-3">
+            <Link
+              href="/menu"
+              className="text-xs text-primary hover:underline"
+            >
+              Are you a customer? Order food here &rarr;
+            </Link>
+          </div>
         </div>
       </div>
     </div>

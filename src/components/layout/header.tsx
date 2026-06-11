@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import {
   Gamepad2,
+  LayoutDashboard,
   LogOut,
   Menu,
   Shield,
@@ -36,7 +37,7 @@ export function Header() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
   const cafeId = profile?.cafe_id;
@@ -119,7 +120,17 @@ export function Header() {
     const supabase = createClient();
     await supabase.auth.signOut();
     signOut();
-    router.push("/auth/login");
+    router.push("/");
+  };
+
+  const getDashboardLink = () => {
+    if (!profile) return "/";
+    const links: Record<string, string> = {
+      super_admin: "/admin/dashboard",
+      cafe_admin: "/cafe/dashboard",
+      cashier: "/counter",
+    };
+    return links[profile.role] || "/";
   };
 
   const roleLabel = () => {
@@ -269,6 +280,14 @@ export function Header() {
                       {roleLabel()}
                     </p>
                   </div>
+                  <Link
+                    href={getDashboardLink()}
+                    onClick={() => setMenuOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted rounded-lg transition-colors min-h-[44px]"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </Link>
                   <button
                     onClick={handleSignOut}
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors min-h-[44px]"

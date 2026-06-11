@@ -115,7 +115,7 @@ const bottomTabMap: Record<string, { href: string; label: string; icon: React.Re
     { href: "/kds", label: "KDS", icon: <ChefHat className="w-5 h-5" /> },
   ],
   cafe_admin: [
-    { href: "/cafe/dashboard", label: "Home", icon: <LayoutDashboard className="w-5 h-5" /> },
+    { href: "/cafe/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
     { href: "/cafe/pos", label: "POS", icon: <ShoppingCart className="w-5 h-5" /> },
     { href: "/cafe/orders", label: "Orders", icon: <ClipboardList className="w-5 h-5" /> },
     { href: "/cafe/menu", label: "Menu", icon: <UtensilsCrossed className="w-5 h-5" /> },
