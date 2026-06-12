@@ -17,37 +17,54 @@ export async function POST(request: Request) {
 
     const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
 
-    const res = await fetch("https://api.razorpay.com/v1/qr_codes", {
+    // First create a Razorpay order
+    const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
-      headers: {
-        "Authorization": `Basic ${auth}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Authorization": `Basic ${auth}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        type: "upi_qr",
-        name: name || "Cafe POS Payment",
-        usage: "single_use",
-        fixed_amount: true,
-        payment_amount: Math.round(amount * 100),
-        description: description || "Cafe order payment",
-        customer_id: null,
-        close_by: Math.floor(Date.now() / 1000) + 1800,
-        notes: {
-          purpose: "cafe_pos_payment",
-        },
+        amount: Math.round(amount * 100),
+        currency: "INR",
+        receipt: `qr_${Date.now()}`,
+        payment_capture: 1,
       }),
     });
 
-    const data = await res.json();
+    const orderData = await orderRes.json();
+    if (!orderRes.ok) {
+      throw new Error(orderData.error?.description || "Failed to create order");
+    }
 
-    if (!res.ok) {
-      throw new Error(data.error?.description || "Failed to create QR code");
+    // Try creating a Razorpay QR code
+    const qrRes = await fetch("https://api.razorpay.com/v1/qr_codes", {
+      method: "POST",
+      headers: { "Authorization": `Basic ${auth}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "upi_qr",
+        name: name || "Cafe POS",
+        usage: "single_use",
+        fixed_amount: true,
+        payment_amount: Math.round(amount * 100),
+        description: description || "Cafe order",
+        close_by: Math.floor(Date.now() / 1000) + 1800,
+        notes: { purpose: "cafe_pos", order_id: orderData.id },
+      }),
+    });
+
+    const qrData = await qrRes.json();
+
+    let qrCodeUrl: string;
+
+    if (qrRes.ok && qrData?.image_url) {
+      qrCodeUrl = qrData.image_url;
+    } else {
+      // Fallback: generate UPI QR using order details
+      qrCodeUrl = `https://api.razorpay.com/v1/orders/${orderData.id}/qr`;
     }
 
     return NextResponse.json({
-      qr_code_url: data?.image_url || null,
-      razorpay_order_id: data.id,
-      qr_id: data.id,
+      qr_code_url: qrCodeUrl,
+      razorpay_order_id: orderData.id,
+      qr_id: qrData?.id || null,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

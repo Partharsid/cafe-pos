@@ -219,6 +219,7 @@ function PaymentModeContent({
   const [upiAmount, setUpiAmount] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [razorpayOrderId, setRazorpayOrderId] = useState<string | null>(null);
+  const [razorpayQrId, setRazorpayQrId] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
   const [qrConfirmed, setQrConfirmed] = useState(false);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
@@ -287,6 +288,7 @@ function PaymentModeContent({
 
       setQrCodeUrl(data.qr_code_url);
       setRazorpayOrderId(data.razorpay_order_id);
+      setRazorpayQrId(data.qr_id);
       setPolling(true);
 
       const { data: payment, error } = await supabase
@@ -320,7 +322,7 @@ function PaymentModeContent({
         const res = await fetch("/api/razorpay/check-status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ razorpay_order_id: razorpayOrderId }),
+          body: JSON.stringify({ razorpay_order_id: razorpayOrderId, qr_id: razorpayQrId }),
         });
         const data = await res.json();
 
@@ -354,7 +356,7 @@ function PaymentModeContent({
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [polling, razorpayOrderId, supabase, order.id, onComplete]);
+  }, [polling, razorpayOrderId, razorpayQrId, supabase, order.id, onComplete]);
 
   // Split payment
   const handleSplitPayment = useCallback(async () => {
@@ -377,6 +379,7 @@ function PaymentModeContent({
         if (!res.ok) throw new Error(data.error);
         setQrCodeUrl(data.qr_code_url);
         setRazorpayOrderId(data.razorpay_order_id);
+        setRazorpayQrId(data.qr_id);
 
         const { error } = await supabase.from("payments").insert({
           order_id: order.id,
@@ -418,7 +421,7 @@ function PaymentModeContent({
         const res = await fetch("/api/razorpay/check-status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ razorpay_order_id: razorpayOrderId }),
+          body: JSON.stringify({ razorpay_order_id: razorpayOrderId, qr_id: razorpayQrId }),
         });
         const data = await res.json();
 
@@ -449,7 +452,7 @@ function PaymentModeContent({
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [polling, razorpayOrderId, supabase, order.id, onComplete]);
+  }, [polling, razorpayOrderId, razorpayQrId, supabase, order.id, onComplete]);
 
   // Razorpay checkout
   const handleRazorpayCheckout = useCallback(async () => {
@@ -462,6 +465,16 @@ function PaymentModeContent({
       });
       const orderData = await res.json();
       if (!res.ok) throw new Error(orderData.error);
+
+      if (!(window as any).Razorpay) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
+          document.body.appendChild(script);
+        });
+      }
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
