@@ -217,9 +217,9 @@ function PaymentModeContent({
   const [change, setChange] = useState(0);
   const [cashAmount, setCashAmount] = useState("");
   const [upiAmount, setUpiAmount] = useState("");
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [paymentLinkUrl, setPaymentLinkUrl] = useState<string | null>(null);
   const [razorpayOrderId, setRazorpayOrderId] = useState<string | null>(null);
-  const [razorpayQrId, setRazorpayQrId] = useState<string | null>(null);
+  const [razorpayPaymentLinkId, setRazorpayPaymentLinkId] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
   const [qrConfirmed, setQrConfirmed] = useState(false);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
@@ -286,9 +286,9 @@ function PaymentModeContent({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setQrCodeUrl(data.qr_code_url);
+      setPaymentLinkUrl(data.payment_link_url);
       setRazorpayOrderId(data.razorpay_order_id);
-      setRazorpayQrId(data.qr_id);
+      setRazorpayPaymentLinkId(data.payment_link_id);
       setPolling(true);
 
       const { data: payment, error } = await supabase
@@ -299,7 +299,7 @@ function PaymentModeContent({
           amount: total,
           method: "upi_qr",
           status: "pending",
-          qr_code_url: data.qr_code_url,
+          payment_link_url: data.payment_link_url,
           razorpay_order_id: data.razorpay_order_id,
         })
         .select()
@@ -322,7 +322,7 @@ function PaymentModeContent({
         const res = await fetch("/api/razorpay/check-status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ razorpay_order_id: razorpayOrderId, qr_id: razorpayQrId }),
+          body: JSON.stringify({ razorpay_order_id: razorpayOrderId }),
         });
         const data = await res.json();
 
@@ -356,7 +356,7 @@ function PaymentModeContent({
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [polling, razorpayOrderId, razorpayQrId, supabase, order.id, onComplete]);
+  }, [polling, razorpayOrderId, supabase, order.id, onComplete]);
 
   // Split payment
   const handleSplitPayment = useCallback(async () => {
@@ -377,9 +377,9 @@ function PaymentModeContent({
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
-        setQrCodeUrl(data.qr_code_url);
+        setPaymentLinkUrl(data.payment_link_url);
         setRazorpayOrderId(data.razorpay_order_id);
-        setRazorpayQrId(data.qr_id);
+        setRazorpayPaymentLinkId(data.payment_link_id);
 
         const { error } = await supabase.from("payments").insert({
           order_id: order.id,
@@ -389,7 +389,7 @@ function PaymentModeContent({
           status: "pending",
           cash_amount: cashVal,
           upi_amount: upiVal,
-          qr_code_url: data.qr_code_url,
+          payment_link_url: data.payment_link_url,
           razorpay_order_id: data.razorpay_order_id,
           split_details: { cash: cashVal, upi: upiVal },
         });
@@ -421,7 +421,7 @@ function PaymentModeContent({
         const res = await fetch("/api/razorpay/check-status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ razorpay_order_id: razorpayOrderId, qr_id: razorpayQrId }),
+          body: JSON.stringify({ razorpay_order_id: razorpayOrderId }),
         });
         const data = await res.json();
 
@@ -452,7 +452,7 @@ function PaymentModeContent({
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [polling, razorpayOrderId, razorpayQrId, supabase, order.id, onComplete]);
+  }, [polling, razorpayOrderId, supabase, order.id, onComplete]);
 
   // Razorpay checkout
   const handleRazorpayCheckout = useCallback(async () => {
@@ -609,7 +609,7 @@ function PaymentModeContent({
 
           {mode === "upi_qr" && (
             <div className="space-y-4">
-              {!qrCodeUrl && !processing && (
+              {!paymentLinkUrl && !processing && (
                 <button
                   onClick={generateQR}
                   className="neon-glow w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-extrabold text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2"
@@ -618,21 +618,17 @@ function PaymentModeContent({
                   Generate QR Code
                 </button>
               )}
-              {processing && !qrCodeUrl && (
+              {processing && !paymentLinkUrl && (
                 <div className="flex flex-col items-center justify-center py-8 space-y-3">
                   <Loader2 className="w-10 h-10 animate-spin text-primary" />
                   <p className="text-sm text-muted-foreground">Generating QR code...</p>
                 </div>
               )}
-              {qrCodeUrl && (
+              {paymentLinkUrl && (
                 <div className="space-y-4">
                   <div className="flex justify-center">
                     <div className="bg-white p-4 rounded-2xl shadow-lg">
-                      <img
-                        src={qrCodeUrl}
-                        alt="UPI QR Code"
-                        className="w-[300px] h-[300px] object-contain"
-                      />
+                      <QRCodeSVG value={paymentLinkUrl} size={300} level="M" />
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground text-center">
@@ -644,7 +640,7 @@ function PaymentModeContent({
                   </div>
                   <button
                     onClick={() => {
-                      setQrCodeUrl(null);
+                      setPaymentLinkUrl(null);
                       setPolling(false);
                       if (pollRef.current) clearInterval(pollRef.current);
                     }}
@@ -665,7 +661,7 @@ function PaymentModeContent({
 
           {mode === "split" && (
             <div className="space-y-4">
-              {!qrCodeUrl && (
+              {!paymentLinkUrl && (
                 <>
                   <div>
                     <label className="text-xs text-muted-foreground font-medium mb-1.5 block">
@@ -728,7 +724,7 @@ function PaymentModeContent({
                   </button>
                 </>
               )}
-              {qrCodeUrl && !qrConfirmed && (
+              {paymentLinkUrl && !qrConfirmed && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/50">
                     <span className="text-sm">UPI Amount to pay</span>
@@ -736,11 +732,7 @@ function PaymentModeContent({
                   </div>
                   <div className="flex justify-center">
                     <div className="bg-white p-4 rounded-2xl shadow-lg">
-                      <img
-                        src={qrCodeUrl}
-                        alt="UPI QR Code"
-                        className="w-[300px] h-[300px] object-contain"
-                      />
+                      <QRCodeSVG value={paymentLinkUrl} size={300} level="M" />
                     </div>
                   </div>
                   <div className="flex items-center justify-center gap-2 text-sm">
@@ -749,7 +741,7 @@ function PaymentModeContent({
                   </div>
                   <button
                     onClick={() => {
-                      setQrCodeUrl(null);
+                      setPaymentLinkUrl(null);
                       setPolling(false);
                       if (pollRef.current) clearInterval(pollRef.current);
                     }}

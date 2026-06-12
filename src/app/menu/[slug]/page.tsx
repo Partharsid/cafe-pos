@@ -12,6 +12,7 @@ import type {
   MenuItem,
   CafeTable,
 } from "@/types/database";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Minus,
   Plus,
@@ -24,6 +25,8 @@ import {
   X,
   ChevronUp,
   Clock,
+  CreditCard,
+  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -72,6 +75,12 @@ export default function CafeMenuPage({
   } | null>(null);
   const [estimatedWait, setEstimatedWait] = useState<number | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const [paymentMethod, setPaymentMethod] = useState<"now" | "later" | null>(null);
+  const [paymentLinkUrl, setPaymentLinkUrl] = useState("");
+  const [paymentLinkId, setPaymentLinkId] = useState("");
+  const [razorpayOrderId, setRazorpayOrderId] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "loading" | "qr" | "polling" | "paid" | "failed">("idle");
 
   const supabase = createClient();
 
@@ -172,7 +181,65 @@ export default function CafeMenuPage({
   const getCartCount = () => cart.reduce((s, ci) => s + ci.quantity, 0);
   const taxPct = Number(cafe?.tax_percentage || 5) / 100;
 
-  const handlePlaceOrder = async () => {
+  const placeOrderInDb = async (paymentNote?: string) => {
+    const subtotal = getCartTotal();
+const taxPct = Number((cafe as any)?.tax_percentage || 5) / 100;
+    const tax = subtotal * taxPct;
+    const royaltyPct = Number(cafe?.royalty_percentage || 0);
+    const royaltyAmount = (subtotal * royaltyPct) / 100;
+    const total = subtotal + tax;
+
+    const notes = paymentNote ? paymentNote : "";
+
+    const { data: order, error } = await supabase
+      .from("orders")
+      .insert({
+        cafe_id: cafe?.id,
+        table_id: selectedTableId || null,
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        order_type: "qr",
+        status: "pending",
+        subtotal,
+        tax,
+        royalty_amount: royaltyAmount,
+        total,
+        notes: notes || null,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const orderItems = cart.map((ci) => {
+      const unitPrice = ci.unitPrice ?? ci.item.price;
+      return {
+        order_id: order.id,
+        menu_item_id: ci.item.id,
+        quantity: ci.quantity,
+        unit_price: unitPrice,
+        subtotal: unitPrice * ci.quantity,
+        notes: ci.notes || null,
+        modifiers: ci.modifiers || null,
+      };
+    });
+
+    await supabase.from("order_items").insert(orderItems);
+
+    if (royaltyAmount > 0) {
+      await supabase.from("royalty_logs").insert({
+        cafe_id: cafe?.id,
+        order_id: order.id,
+        order_total: total,
+        royalty_percentage: royaltyPct,
+        royalty_amount: royaltyAmount,
+      });
+    }
+
+    return order;
+  };
+
+  const handlePayLater = async () => {
     if (!customerName.trim() || !customerPhone.trim()) {
       toast.error("Please enter your name and phone number");
       return;
@@ -188,67 +255,16 @@ export default function CafeMenuPage({
 
     setPlacingOrder(true);
     try {
-      const subtotal = getCartTotal();
-const taxPct = Number((cafe as any)?.tax_percentage || 5) / 100;
-      const tax = subtotal * taxPct;
-      const royaltyPct = Number(cafe?.royalty_percentage || 0);
-      const royaltyAmount = (subtotal * royaltyPct) / 100;
-      const total = subtotal + tax;
-
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert({
-          cafe_id: cafe?.id,
-          table_id: selectedTableId || null,
-          customer_name: customerName.trim(),
-          customer_phone: customerPhone.trim(),
-          order_type: "qr",
-          status: "pending",
-          subtotal,
-          tax,
-          royalty_amount: royaltyAmount,
-          total,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const orderItems = cart.map((ci) => {
-        const unitPrice = ci.unitPrice ?? ci.item.price;
-        return {
-        order_id: order.id,
-        menu_item_id: ci.item.id,
-        quantity: ci.quantity,
-        unit_price: unitPrice,
-        subtotal: unitPrice * ci.quantity,
-        notes: ci.notes || null,
-        modifiers: ci.modifiers || null,
-        };
-      });
-
-      await supabase.from("order_items").insert(orderItems);
-
-      if (royaltyAmount > 0) {
-        await supabase.from("royalty_logs").insert({
-          cafe_id: cafe?.id,
-          order_id: order.id,
-          order_total: total,
-          royalty_percentage: royaltyPct,
-          royalty_amount: royaltyAmount,
-        });
-      }
-
-      toast.success(
-        "Order placed successfully! Your order will be prepared soon."
-      );
+      await placeOrderInDb("Payment pending at counter");
+      toast.success("Order placed! Pay at the counter.");
       setCart([]);
       setShowForm(false);
       setShowCart(false);
       setCustomerName("");
       setCustomerPhone("");
+      setPaymentMethod(null);
+      setPaymentStatus("idle");
 
-      // Calculate estimated wait time
       const { data: pendingOrders } = await supabase
         .from("orders")
         .select("id")
@@ -266,6 +282,127 @@ const taxPct = Number((cafe as any)?.tax_percentage || 5) / 100;
       setPlacingOrder(false);
     }
   };
+
+  const handlePayNow = async () => {
+    if (!customerName.trim() || !customerPhone.trim()) {
+      toast.error("Please enter your name and phone number");
+      return;
+    }
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
+    if (!selectedTableId && !tableNumber.trim()) {
+      toast.error("Please select or enter your table number");
+      return;
+    }
+
+    setPaymentStatus("loading");
+    try {
+      const subtotal = getCartTotal();
+      const pct = Number((cafe as any)?.tax_percentage || 5) / 100;
+      const total = subtotal + subtotal * pct;
+
+      const res = await fetch("/api/razorpay/create-payment-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: total,
+          customerName: customerName.trim(),
+          customerPhone: customerPhone.trim(),
+          description: `Order at ${cafe?.name || "Cafe"}`,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create payment link");
+
+      setPaymentLinkUrl(data.payment_link_url);
+      setPaymentLinkId(data.payment_link_id);
+      setRazorpayOrderId(data.payment_link_id);
+      setPaymentStatus("qr");
+    } catch (err: any) {
+      toast.error(err.message);
+      setPaymentStatus("failed");
+    }
+  };
+
+  const confirmPaidOrder = async () => {
+    setPlacingOrder(true);
+    try {
+      await placeOrderInDb("Paid via UPI QR");
+      toast.success("Payment received! Your order is being prepared.");
+      setCart([]);
+      setShowForm(false);
+      setShowCart(false);
+      setCustomerName("");
+      setCustomerPhone("");
+      setPaymentMethod(null);
+      setPaymentStatus("idle");
+      setPaymentLinkUrl("");
+
+      const { data: pendingOrders } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("cafe_id", cafe?.id)
+        .in("status", ["pending", "preparing"]);
+
+      const avgPrepTime = Number(cafe?.avg_prep_time_minutes ?? 15);
+      const ordersAhead = (pendingOrders?.length || 0);
+      const wait = Math.max(ordersAhead * avgPrepTime, avgPrepTime);
+      setEstimatedWait(wait);
+      setShowConfirmation(true);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
+  const resetPayment = () => {
+    setPaymentMethod(null);
+    setPaymentStatus("idle");
+    setPaymentLinkUrl("");
+    setPaymentLinkId("");
+    setRazorpayOrderId("");
+  };
+
+  // Poll for payment status when QR is displayed
+  useEffect(() => {
+    if (paymentStatus !== "qr") return;
+    if (!paymentLinkId && !razorpayOrderId) return;
+
+    const linkId = paymentLinkId || razorpayOrderId;
+    if (!linkId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(
+          `/api/razorpay/check-status?payment_link_id=${linkId}`
+        );
+        const data = await res.json();
+        if (data.paid) {
+          clearInterval(interval);
+          setPaymentStatus("paid");
+          await confirmPaidOrder();
+        }
+      } catch {
+        // continue polling
+      }
+    }, 5000);
+
+    // Timeout after 5 minutes
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      setPaymentStatus("failed");
+      toast.error("Payment timed out. You can try again or pay later.");
+    }, 300000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [paymentStatus, paymentLinkId, razorpayOrderId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -665,24 +802,170 @@ const taxPct = Number((cafe as any)?.tax_percentage || 5) / 100;
                         )}
                       </div>
                     )}
-                    <button
-                      onClick={handlePlaceOrder}
-                      disabled={placingOrder}
-                      className="neon-glow w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 min-h-[48px]"
-                    >
-                      {placingOrder ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Send className="w-4 h-4" />
-                      )}
-                      {placingOrder
-                        ? "Placing Order..."
-                        : "Place Order"}
-                    </button>
+
+                    {/* Payment Method Selection */}
+                    {!paymentMethod ? (
+                      <div className="space-y-3 pt-2 border-t border-border">
+                        <p className="text-sm font-semibold text-center">
+                          Select Payment Method
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => {
+                              setPaymentMethod("now");
+                              handlePayNow();
+                            }}
+                            className="flex flex-col items-center gap-2 p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/50 hover:bg-primary/5 transition-all min-h-[80px]"
+                          >
+                            <CreditCard className="w-6 h-6 text-primary" />
+                            <span className="text-xs font-semibold">Pay Now</span>
+                            <span className="text-[10px] text-muted-foreground">Scan UPI QR</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setPaymentMethod("later");
+                              handlePayLater();
+                            }}
+                            className="flex flex-col items-center gap-2 p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/50 hover:bg-primary/5 transition-all min-h-[80px]"
+                          >
+                            <Clock className="w-6 h-6 text-muted-foreground" />
+                            <span className="text-xs font-semibold">Pay Later</span>
+                            <span className="text-[10px] text-muted-foreground">Pay at counter</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : paymentMethod === "later" ? (
+                      <div className="space-y-3 pt-2 border-t border-border">
+                        <button
+                          onClick={handlePayLater}
+                          disabled={placingOrder}
+                          className="neon-glow w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 min-h-[48px]"
+                        >
+                          {placingOrder ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                          {placingOrder ? "Placing Order..." : "Confirm & Pay Later"}
+                        </button>
+                        <button
+                          onClick={resetPayment}
+                          className="w-full text-xs text-muted-foreground hover:text-foreground text-center min-h-[36px]"
+                        >
+                          Change payment method
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>
             )}
+          </div>
+        </>
+      )}
+
+      {/* QR Code Payment Modal */}
+      {(paymentStatus === "loading" || paymentStatus === "qr" || paymentStatus === "polling" || paymentStatus === "paid" || paymentStatus === "failed") && (
+        <>
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="glass-card rounded-2xl p-6 max-w-sm w-full animate-scale-in text-center">
+              {paymentStatus === "loading" && (
+                <div className="py-8">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
+                  <p className="text-sm font-semibold">Generating payment QR...</p>
+                </div>
+              )}
+
+              {paymentStatus === "qr" && (
+                <div>
+                  <h3 className="text-lg font-bold mb-2">Scan to Pay</h3>
+                  <p className="text-xs text-muted-foreground mb-4">Scan with any UPI app to pay</p>
+                  <div className="flex justify-center mb-4">
+                    <div className="bg-white rounded-xl p-4 inline-block">
+                      <QRCodeSVG value={paymentLinkUrl} size={250} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">Scan the QR code or tap to open payment link</p>
+                  <a
+                    href={paymentLinkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="neon-glow w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm block text-center min-h-[48px]"
+                  >
+                    Open Payment Link
+                  </a>
+                  <button
+                    onClick={resetPayment}
+                    className="w-full mt-3 text-xs text-muted-foreground hover:text-foreground min-h-[36px]"
+                  >
+                    Cancel & pay later instead
+                  </button>
+                </div>
+              )}
+
+              {paymentStatus === "polling" && (
+                <div>
+                  <h3 className="text-lg font-bold mb-2">Awaiting Payment</h3>
+                  <div className="flex justify-center mb-4">
+                    <div className="bg-white rounded-xl p-4 inline-block opacity-70">
+                      <QRCodeSVG value={paymentLinkUrl} size={250} />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">Waiting for payment confirmation...</span>
+                  </div>
+                  <button
+                    onClick={resetPayment}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground min-h-[36px]"
+                  >
+                    Cancel & pay later instead
+                  </button>
+                </div>
+              )}
+
+              {paymentStatus === "paid" && (
+                <div className="py-6">
+                  <div className="w-16 h-16 rounded-full bg-chart-4/20 mx-auto mb-4 flex items-center justify-center">
+                    <CheckCircle className="w-8 h-8 text-chart-4" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-1">Payment Successful!</h3>
+                  <p className="text-sm text-muted-foreground">Your order is being placed...</p>
+                </div>
+              )}
+
+              {paymentStatus === "failed" && (
+                <div className="py-6">
+                  <div className="w-16 h-16 rounded-full bg-destructive/20 mx-auto mb-4 flex items-center justify-center">
+                    <X className="w-8 h-8 text-destructive" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-1">Payment Failed</h3>
+                  <p className="text-xs text-muted-foreground mb-4">Payment was not completed. You can try again or pay later.</p>
+                  <button
+                    onClick={() => {
+                      setPaymentMethod("later");
+                      handlePayLater();
+                    }}
+                    disabled={placingOrder}
+                    className="neon-glow w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 min-h-[48px]"
+                  >
+                    {placingOrder ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                    Pay Later Instead
+                  </button>
+                  <button
+                    onClick={() => {
+                      resetPayment();
+                      setPaymentMethod("now");
+                      handlePayNow();
+                    }}
+                    className="w-full mt-2 text-xs text-muted-foreground hover:text-foreground min-h-[36px]"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}

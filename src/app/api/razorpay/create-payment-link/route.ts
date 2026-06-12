@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { amount, name, description } = await request.json();
+    const { amount, customerName, customerPhone, description } = await request.json();
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
@@ -17,23 +17,26 @@ export async function POST(request: Request) {
 
     const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
 
-    // Create a Razorpay Payment Link
     const res = await fetch("https://api.razorpay.com/v1/payment_links", {
       method: "POST",
-      headers: { "Authorization": `Basic ${auth}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         amount: Math.round(amount * 100),
         currency: "INR",
         accept_partial: false,
-        description: description || "Cafe order",
+        description: description || "Cafe Order Payment",
         customer: {
-          name: name || "Cafe POS",
-          contact: "",
-          email: "",
+          name: customerName || "Guest",
+          contact: customerPhone || "",
         },
         notify: { sms: false, email: false },
         reminder_enable: false,
-        notes: { purpose: "cafe_pos" },
+        notes: { purpose: "cafe_qr_order" },
+        callback_url: "",
+        callback_method: "get",
       }),
     });
 
@@ -45,8 +48,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       payment_link_url: data.short_url,
-      razorpay_order_id: data.id,
       payment_link_id: data.id,
+      amount: data.amount,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
