@@ -410,35 +410,37 @@ ${order.order_items?.map((oi: any) =>
             </div>
 
             {/* Items Table */}
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-                  <th className="text-left py-2 font-medium w-16">Qty</th>
-                  <th className="text-left py-2 font-medium">Item</th>
-                  <th className="text-right py-2 font-medium">Price</th>
-                  <th className="text-right py-2 font-medium">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {order.order_items?.map((oi: any, i: number) => (
-                  <tr key={i} className="border-b border-border/30 last:border-0">
-                    <td className="py-3 font-mono text-muted-foreground">x{oi.quantity}</td>
-                    <td className="py-3">
-                      <p className="font-medium">{oi.menu_item?.name || "Unknown Item"}</p>
-                      {oi.notes && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{oi.notes}</p>
-                      )}
-                    </td>
-                    <td className="py-3 text-right text-muted-foreground font-mono">
-                      ₹{Number(oi.unit_price).toFixed(2)}
-                    </td>
-                    <td className="py-3 text-right font-semibold font-mono">
-                      ₹{Number(oi.subtotal).toFixed(2)}
-                    </td>
+            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+              <table className="w-full text-sm min-w-[320px] sm:min-w-0">
+                <thead>
+                  <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
+                    <th className="text-left py-2 font-medium w-16">Qty</th>
+                    <th className="text-left py-2 font-medium">Item</th>
+                    <th className="text-right py-2 font-medium">Price</th>
+                    <th className="text-right py-2 font-medium">Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {order.order_items?.map((oi: any, i: number) => (
+                    <tr key={i} className="border-b border-border/30 last:border-0">
+                      <td className="py-3 font-mono text-muted-foreground">x{oi.quantity}</td>
+                      <td className="py-3">
+                        <p className="font-medium text-sm">{oi.menu_item?.name || "Unknown Item"}</p>
+                        {oi.notes && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{oi.notes}</p>
+                        )}
+                      </td>
+                      <td className="py-3 text-right text-muted-foreground font-mono text-xs sm:text-sm">
+                        ₹{Number(oi.unit_price).toFixed(2)}
+                      </td>
+                      <td className="py-3 text-right font-semibold font-mono text-xs sm:text-sm">
+                        ₹{Number(oi.subtotal).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {(!order.order_items || order.order_items.length === 0) && (
               <p className="text-sm text-muted-foreground text-center py-8">No items in this order</p>
@@ -541,17 +543,17 @@ ${order.order_items?.map((oi: any) =>
           </GlassCard>
 
           {/* Print Buttons */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               onClick={handlePrintThermal}
-              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-background border border-border text-sm font-medium hover:bg-muted transition-all"
+              className="flex items-center justify-center gap-2 px-3 py-3 rounded-lg bg-background border border-border text-sm font-medium hover:bg-muted transition-all min-h-[44px]"
             >
               <Printer className="w-4 h-4" />
               Thermal
             </button>
             <button
               onClick={handlePrintBrowser}
-              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-background border border-border text-sm font-medium hover:bg-muted transition-all"
+              className="flex items-center justify-center gap-2 px-3 py-3 rounded-lg bg-background border border-border text-sm font-medium hover:bg-muted transition-all min-h-[44px]"
             >
               <Printer className="w-4 h-4" />
               Browser
@@ -709,7 +711,7 @@ ${order.order_items?.map((oi: any) =>
           </div>
 
           {/* Timestamps */}
-          <div className="mt-5 pt-4 border-t border-border/50 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+          <div className="mt-5 pt-4 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs text-muted-foreground">
             <div>
               <span className="font-medium text-foreground">Order placed:</span>{" "}
               {format(new Date(order.created_at), "dd/MM/yyyy hh:mm a")}

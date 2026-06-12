@@ -236,7 +236,7 @@ export default function StaffManagement() {
             Staff Management
           </h1>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+<div className="grid grid-cols-3 gap-3 sm:gap-4">
           <div className="glass-card rounded-xl p-5">
             <div className="h-12 bg-white/[0.03] rounded-lg animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
           </div>

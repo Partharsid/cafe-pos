@@ -289,17 +289,17 @@ function StockCard({
               : "OK"}
         </Badge>
       </div>
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-start gap-2 flex-col sm:flex-row sm:items-center">
         <input
           type="number"
           min={0}
           value={stock}
           onChange={(e) => onChange(parseInt(e.target.value) || 0)}
-          className="w-20 px-2 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm text-center min-h-[44px]"
+          className="w-full sm:w-24 px-3 py-2 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm text-center min-h-[44px]"
         />
         <button
           onClick={() => onSave(item.id)}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors min-h-[44px]"
+          className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors min-h-[44px] w-full sm:w-auto justify-center sm:justify-start"
         >
           <Save className="w-3.5 h-3.5" /> Update
         </button>

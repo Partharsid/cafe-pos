@@ -434,7 +434,7 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
       {/* Filter Bar */}
       <div className="space-y-3">
         {/* Status Filter Pills */}
-        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none flex-nowrap pb-2">
           {ORDER_STATUSES.map((s) => (
             <button
               key={s}
@@ -463,69 +463,72 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
         </div>
 
         {/* Secondary Filters Row */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Date Filter */}
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border">
-            {DATE_FILTERS.map((d) => (
-              <button
-                key={d}
-                onClick={() => {
-                  setDateFilter(d);
-                  if (d !== "custom") {
-                    setCustomDateStart("");
-                    setCustomDateEnd("");
-                  }
-                }}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium capitalize transition-colors ${
-                  dateFilter === d
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {d === "this_week" ? "This Week" : d}
-              </button>
-            ))}
-          </div>
-
-          {/* Custom Date Range */}
-          {dateFilter === "custom" && (
-            <div className="flex items-center gap-1.5">
-              <input
-                type="date"
-                value={customDateStart}
-                onChange={(e) => setCustomDateStart(e.target.value)}
-                className="px-2.5 py-1.5 rounded-lg text-xs bg-muted border border-border outline-none focus:border-primary/50 transition-colors"
-              />
-              <span className="text-xs text-muted-foreground">to</span>
-              <input
-                type="date"
-                value={customDateEnd}
-                onChange={(e) => setCustomDateEnd(e.target.value)}
-                className="px-2.5 py-1.5 rounded-lg text-xs bg-muted border border-border outline-none focus:border-primary/50 transition-colors"
-              />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          {/* Date Filter + Type Filter */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Date Filter */}
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border">
+              {DATE_FILTERS.map((d) => (
+                <button
+                  key={d}
+                  onClick={() => {
+                    setDateFilter(d);
+                    if (d !== "custom") {
+                      setCustomDateStart("");
+                      setCustomDateEnd("");
+                    }
+                  }}
+                  className={`px-2.5 py-1.5 rounded-md text-xs font-medium capitalize transition-colors ${
+                    dateFilter === d
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {d === "this_week" ? "This Week" : d}
+                </button>
+              ))}
             </div>
-          )}
 
-          {/* Order Type Filter */}
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border ml-auto sm:ml-0">
-            {ORDER_TYPES.map((t) => (
-              <button
-                key={t}
-                onClick={() => setTypeFilter(t)}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium capitalize transition-colors flex items-center gap-1 ${
-                  typeFilter === t
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t !== "all" && typeIcons[t]}
-                {t === "dine_in" ? "Dine-in" : t === "qr" ? "QR" : t === "all" ? "All Types" : "Takeaway"}
-              </button>
-            ))}
+            {/* Custom Date Range */}
+            {dateFilter === "custom" && (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="date"
+                  value={customDateStart}
+                  onChange={(e) => setCustomDateStart(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs bg-muted border border-border outline-none focus:border-primary/50 transition-colors"
+                />
+                <span className="text-xs text-muted-foreground">to</span>
+                <input
+                  type="date"
+                  value={customDateEnd}
+                  onChange={(e) => setCustomDateEnd(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs bg-muted border border-border outline-none focus:border-primary/50 transition-colors"
+                />
+              </div>
+            )}
+
+            {/* Order Type Filter */}
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border">
+              {ORDER_TYPES.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTypeFilter(t)}
+                  className={`px-2.5 py-1.5 rounded-md text-xs font-medium capitalize transition-colors flex items-center gap-1 ${
+                    typeFilter === t
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t !== "all" && typeIcons[t]}
+                  {t === "dine_in" ? "Dine-in" : t === "qr" ? "QR" : t === "all" ? "All Types" : "Takeaway"}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Search */}
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-64 sm:ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
@@ -548,7 +551,7 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
 
       {/* Bulk Actions Bar */}
       {selectedOrderIds.size > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-accent/10 border border-accent/20 text-sm">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-4 py-2.5 rounded-xl bg-accent/10 border border-accent/20 text-sm">
           <span className="font-semibold text-accent">{selectedOrderIds.size} selected</span>
           <button
             onClick={handleBulkPrint}
@@ -656,7 +659,7 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
                 <p className="font-bold text-primary text-lg">
                   ₹{Number(order.total).toFixed(0)}
                 </p>
-                <p className="text-[11px] text-muted-foreground flex items-center gap-1 justify-end mt-0.5">
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1 justify-end mt-0.5 whitespace-nowrap max-w-[110px] sm:max-w-none overflow-hidden text-ellipsis">
                   <Clock className="w-3 h-3" />
                   {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
                 </p>
@@ -713,7 +716,7 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border">
+            <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border flex-wrap">
               {order.status !== "completed" && order.status !== "cancelled" && (
                 <>
                   {order.status === "pending" && (
@@ -805,7 +808,7 @@ ${order.customer_name ? `<p style="font-size:12px;text-align:center;margin:0">${
         <div className="flex justify-center pt-2">
           <button
             onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all hover:border-white/20 group"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all hover:border-white/20 group min-h-[48px]"
           >
             <ArrowDown className="w-4 h-4 group-hover:animate-bounce" />
             Load More ({filteredOrders.length - visibleCount} remaining)

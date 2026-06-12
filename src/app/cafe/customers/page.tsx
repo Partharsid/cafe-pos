@@ -196,14 +196,14 @@ export default function CustomersPage() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
+      <div className="relative w-full sm:max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
           placeholder="Search by name or phone..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-8 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm"
+          className="w-full pl-10 pr-8 py-3 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[48px]"
         />
         {searchQuery && (
           <button

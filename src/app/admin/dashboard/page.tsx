@@ -143,7 +143,7 @@ export default function SuperAdminDashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
             <div className="p-2 sm:p-2.5 rounded-lg bg-primary/15">
@@ -207,7 +207,7 @@ export default function SuperAdminDashboard() {
         <h3 className="text-base sm:text-lg font-semibold mb-4">
           Revenue (Last 7 Days)
         </h3>
-        <div className="h-52 sm:h-64">
+        <div className="min-h-[200px] sm:min-h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stats?.revenueByDay}>
               <CartesianGrid

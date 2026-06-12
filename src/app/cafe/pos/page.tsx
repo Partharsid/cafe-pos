@@ -172,7 +172,7 @@ export default function POSPage() {
     addToCart(item);
     setRecentlyAdded((prev) => new Set(prev).add(item.id));
     setTimeout(() => { setRecentlyAdded((prev) => { const next = new Set(prev); next.delete(item.id); return next; }); }, 800);
-    if (quickAdd && navigator.vibrate) navigator.vibrate(15);
+    if (quickAdd) { try { navigator.vibrate(15); } catch { /* vibrate not supported */ } }
   }, [addToCart, quickAdd]);
 
   const handlePlaceOrder = useCallback(async () => {
@@ -280,7 +280,7 @@ export default function POSPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-8rem)]">
+    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-8rem)] overflow-hidden">
         <div className="flex-1 flex flex-col space-y-4">
           <div className="flex items-center gap-3">
             <div className="h-8 w-40 rounded-lg bg-muted/40 animate-pulse" />
@@ -308,7 +308,7 @@ export default function POSPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input ref={searchRef} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search items... (Ctrl+K)"
               className="w-full pl-10 pr-10 py-2.5 min-h-[44px] rounded-xl bg-muted/60 border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm transition-all" />
-            {search && <button onClick={() => { setSearch(""); searchRef.current?.focus(); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted min-h-[28px] min-w-[28px] flex items-center justify-center"><X className="w-3.5 h-3.5 text-muted-foreground" /></button>}
+            {search && <button onClick={() => { setSearch(""); searchRef.current?.focus(); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-muted min-h-[44px] min-w-[44px] flex items-center justify-center"><X className="w-3.5 h-3.5 text-muted-foreground" /></button>}
           </div>
           <button onClick={() => setQuickAdd(!quickAdd)}
             className={`hidden sm:flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all ${quickAdd ? "bg-chart-4/20 text-chart-4 border border-chart-4/30 neon-glow" : "bg-muted/60 text-muted-foreground border border-border"}`}>
@@ -361,14 +361,14 @@ export default function POSPage() {
               const soldOut = !inStock || (!item.is_available && item.stock_quantity !== null && item.stock_quantity <= 0);
               return (
                 <button key={item.id} onClick={() => inStock && item.is_available && handleAddToCart(item)} disabled={!inStock || !item.is_available}
-                  className={`group glass-card rounded-xl p-2 sm:p-3 text-left transition-all duration-200 min-h-[44px] relative overflow-hidden ${justAdded ? "border-primary/60 shadow-lg shadow-primary/15 ring-1 ring-primary/30" : ""} ${inStock && item.is_available ? "hover:border-primary/40 active:scale-[0.97] cursor-pointer" : "opacity-40 cursor-not-allowed"}`}>
+                  className={`group glass-card rounded-xl p-2 sm:p-3 text-left transition-all duration-200 min-h-[44px] relative overflow-hidden ring-1 ${justAdded ? "border-primary/60 shadow-lg shadow-primary/15 ring-primary/30" : "ring-transparent"} ${inStock && item.is_available ? "hover:border-primary/40 active:scale-[0.97] cursor-pointer" : "opacity-40 cursor-not-allowed"}`}>
                   {soldOut && <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 rounded-xl"><span className="text-xs font-black tracking-widest text-destructive/80 rotate-[-15deg] text-lg">SOLD OUT</span></div>}
                   {item.image_url ? (
-                    <div className="h-24 sm:h-[120px] rounded-lg overflow-hidden mb-2 bg-muted/40">
+                    <div className="h-20 sm:h-[120px] rounded-lg overflow-hidden mb-2 bg-muted/40">
                       <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                     </div>
                   ) : (
-                    <div className="h-24 sm:h-[120px] rounded-lg overflow-hidden mb-2 bg-muted/30 flex items-center justify-center">
+                    <div className="h-20 sm:h-[120px] rounded-lg overflow-hidden mb-2 bg-muted/30 flex items-center justify-center">
                       <Hash className="w-8 h-8 text-muted-foreground/30" />
                     </div>
                   )}
@@ -401,7 +401,7 @@ export default function POSPage() {
       {showCart && (
         <>
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden" onClick={() => setShowCart(false)} />
-          <div className="fixed inset-x-0 bottom-0 z-50 lg:hidden glass-card rounded-t-2xl max-h-[82vh] flex flex-col safe-bottom animate-slide-in-up">
+          <div className="fixed inset-x-0 bottom-0 z-50 lg:hidden glass-card rounded-t-2xl max-h-[85vh] flex flex-col safe-bottom animate-slide-in-up overflow-hidden overscroll-contain">
             <div className="flex items-center justify-center pt-3 pb-2"><div className="w-10 h-1 rounded-full bg-muted-foreground/30" /></div>
             <div className="px-4 pb-4 flex-1 overflow-y-auto">
               <CartContent cart={cart} cartCount={cartCount} getCartTotal={getCartTotal} updateQuantity={updateQuantity} removeFromCart={removeFromCart} clearCart={clearCart} placingOrder={placingOrder} onPlaceOrder={handlePlaceOrder} orderNotes={orderNotes} setOrderNotes={setOrderNotes} taxRate={taxRate} setTaxRate={setTaxRate} showTaxInput={showTaxInput} setShowTaxInput={setShowTaxInput} discountPercent={discountPercent} setDiscountPercent={setDiscountPercent} showDiscount={showDiscount} setShowDiscount={setShowDiscount} onClose={() => setShowCart(false)} />
@@ -438,8 +438,8 @@ function CartContent({ cart, cartCount, getCartTotal, updateQuantity, removeFrom
           {cartCount > 0 && <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-bold">{cartCount}</span>}
         </div>
         <div className="flex items-center gap-1">
-          {cart.length > 0 && <button onClick={clearCart} className="text-xs text-destructive hover:underline min-h-[36px] px-2 flex items-center">Clear</button>}
-          {onClose && <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted min-h-[36px] min-w-[36px] flex items-center justify-center"><ChevronDown className="w-4 h-4 text-muted-foreground" /></button>}
+          {cart.length > 0 && <button onClick={clearCart} className="text-xs text-destructive hover:underline min-h-[44px] px-2 flex items-center">Clear</button>}
+          {onClose && <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted min-h-[44px] min-w-[44px] flex items-center justify-center"><ChevronDown className="w-4 h-4 text-muted-foreground" /></button>}
         </div>
       </div>
 
@@ -464,7 +464,7 @@ function CartContent({ cart, cartCount, getCartTotal, updateQuantity, removeFrom
               </div>
               <div className="text-right shrink-0 min-w-[60px]">
                 <p className="text-sm font-bold tabular-nums">₹{(ci.menuItem.price * ci.quantity).toFixed(0)}</p>
-                <button onClick={() => removeFromCart(ci.menuItem.id)} className="text-xs text-destructive/70 hover:text-destructive mt-0.5 min-h-[28px] flex items-center justify-end w-full"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => removeFromCart(ci.menuItem.id)} className="text-xs text-destructive/70 hover:text-destructive mt-0.5 min-h-[44px] flex items-center justify-end w-full"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
           ))
@@ -477,7 +477,7 @@ function CartContent({ cart, cartCount, getCartTotal, updateQuantity, removeFrom
             <NotebookPen className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground font-medium">Order Note</span>
           </div>
-          <input value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} placeholder="Add a note..." className="w-full px-3 py-2.5 min-h-[42px] rounded-xl bg-muted/40 border border-border text-sm outline-none focus:border-primary/50 transition-colors" />
+          <input value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} placeholder="Add a note..." className="w-full px-3 py-2.5 min-h-[44px] rounded-xl bg-muted/40 border border-border text-sm outline-none focus:border-primary/50 transition-colors" />
         </div>
       )}
 

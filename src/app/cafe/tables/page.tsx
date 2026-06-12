@@ -417,7 +417,7 @@ export default function TablesPage() {
 
       {/* Table Cards Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <TableCardSkeleton key={i} />
           ))}
@@ -429,7 +429,7 @@ export default function TablesPage() {
           description="Add your first table to generate QR codes. Customers will scan these to order directly from their seat."
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {tables.map((table) => (
             <GlassCard
               key={table.id}
@@ -447,7 +447,7 @@ export default function TablesPage() {
               </div>
 
               {/* QR Code */}
-              <div className="bg-white p-3 rounded-xl shadow-md inline-block">
+              <div className="bg-white p-3 rounded-xl shadow-md inline-block max-w-full">
                 <QRCodeSVG
                   id={`qr-table-${table.id}`}
                   value={
@@ -471,7 +471,7 @@ export default function TablesPage() {
                     <button
                       onClick={() => handleDeleteTable(table.id)}
                       disabled={deleting === table.id}
-                      className="px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground text-xs font-semibold min-h-[34px] hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
+                      className="px-3 py-2 rounded-lg bg-destructive text-destructive-foreground text-xs font-semibold min-h-[44px] hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
                     >
                       {deleting === table.id ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -482,7 +482,7 @@ export default function TablesPage() {
                     </button>
                     <button
                       onClick={() => setConfirmDelete(null)}
-                      className="px-3 py-1.5 rounded-lg bg-muted text-xs font-medium min-h-[34px] hover:bg-muted/80"
+                      className="px-3 py-2 rounded-lg bg-muted text-xs font-medium min-h-[44px] hover:bg-muted/80"
                     >
                       Cancel
                     </button>
@@ -492,7 +492,7 @@ export default function TablesPage() {
                     <button
                       onClick={() => handleRegenerateQR(table.id)}
                       disabled={regenerating === table.id}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-chart-4/15 text-chart-4 hover:bg-chart-4/25 transition-colors disabled:opacity-50 min-h-[34px]"
+                      className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-medium bg-chart-4/15 text-chart-4 hover:bg-chart-4/25 transition-colors disabled:opacity-50 min-h-[44px]"
                     >
                       {regenerating === table.id ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -503,7 +503,7 @@ export default function TablesPage() {
                     </button>
                     <button
                       onClick={() => downloadTableQR(table)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors min-h-[34px]"
+                      className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors min-h-[44px]"
                     >
                       <Download className="w-3 h-3" />
                       Download
@@ -516,7 +516,7 @@ export default function TablesPage() {
                           table.id
                         )
                       }
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-muted transition-colors min-h-[34px]"
+                      className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-medium border border-border hover:bg-muted transition-colors min-h-[44px]"
                     >
                       {copiedId === table.id ? (
                         <Check className="w-3 h-3 text-chart-4" />
@@ -527,7 +527,7 @@ export default function TablesPage() {
                     </button>
                     <button
                       onClick={() => setConfirmDelete(table.id)}
-                      className="p-1.5 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors min-h-[34px] min-w-[34px] flex items-center justify-center"
+                      className="p-2 rounded-lg bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>

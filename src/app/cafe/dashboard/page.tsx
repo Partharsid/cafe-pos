@@ -422,7 +422,7 @@ export default function CafeAdminDashboard() {
           <Skeleton className="h-8 w-44 mb-2" />
           <Skeleton className="h-4 w-64" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <StatCardSkeleton />
           <StatCardSkeleton />
           <StatCardSkeleton />
@@ -481,7 +481,7 @@ export default function CafeAdminDashboard() {
       </div>
 
       {/* ===== Stat Cards ===== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {/* Today's Revenue */}
         <GlassCard className="p-5 group overflow-hidden relative">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.08] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
@@ -597,7 +597,7 @@ export default function CafeAdminDashboard() {
       {/* ===== Low Stock Banner ===== */}
       {lowStock.length > 0 && (
         <GlassCard className="border-amber-500/[0.2] bg-amber-500/[0.03]">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-3 sm:p-4">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-amber-500/[0.12] shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-400" />
@@ -647,7 +647,7 @@ export default function CafeAdminDashboard() {
             description="Revenue will appear here after you start processing orders"
           />
         ) : (
-          <div className="h-56 sm:h-64">
+          <div className="min-h-[200px] sm:min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueByDay} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                 <defs>

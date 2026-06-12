@@ -363,7 +363,7 @@ const taxPct = Number((cafe as any)?.tax_percentage || 5) / 100;
               className="glass-card rounded-xl p-2 sm:p-3 text-left hover:border-primary/50 transition-all duration-200 active:scale-95 min-h-[44px]"
             >
               {item.image_url && (
-                <div className="h-24 sm:h-28 rounded-lg overflow-hidden mb-2 bg-muted">
+                <div className="h-20 sm:h-28 rounded-lg overflow-hidden mb-2 bg-muted">
                   <img
                     src={item.image_url}
                     alt={item.name}
@@ -385,6 +385,19 @@ const taxPct = Number((cafe as any)?.tax_percentage || 5) / 100;
           ))}
         </div>
       </div>
+
+      {/* Floating cart button (mobile) */}
+      {cartCount > 0 && (
+        <button
+          onClick={() => setShowCart(true)}
+          className="fixed bottom-20 right-4 z-30 neon-glow w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center sm:hidden active:scale-95 transition-transform"
+        >
+          <ShoppingCart className="w-6 h-6" />
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full text-xs flex items-center justify-center font-bold">
+            {cartCount}
+          </span>
+        </button>
+      )}
 
       {/* Modifier Selection Popup */}
       {modifierPopup && (

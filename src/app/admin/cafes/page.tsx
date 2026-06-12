@@ -270,14 +270,14 @@ export default function ManageCafes() {
             <div className="flex gap-1.5 mt-4 flex-wrap">
               <button
                 onClick={() => handleEdit(cafe)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 transition-colors min-h-[36px]"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 transition-colors min-h-[44px]"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 Edit
               </button>
               <button
                 onClick={() => handleToggleActive(cafe)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 transition-colors min-h-[36px]"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 transition-colors min-h-[44px]"
               >
                 {cafe.is_active ? (
                   <X className="w-3.5 h-3.5" />
@@ -288,7 +288,7 @@ export default function ManageCafes() {
               </button>
               <button
                 onClick={() => handleDelete(cafe.id)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors min-h-[36px]"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors min-h-[44px]"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Delete

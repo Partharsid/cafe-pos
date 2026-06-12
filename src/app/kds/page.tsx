@@ -176,7 +176,7 @@ export default function KitchenDisplay() {
       </div>
 
       {/* Mobile Tabs */}
-      <div className="flex gap-1 mb-3 lg:hidden">
+      <div className="flex gap-1 mb-3 overflow-x-auto lg:hidden scrollbar-none">
         {["pending", "preparing", "ready"].map((tab) => {
           const col = columnMap[tab];
           return (

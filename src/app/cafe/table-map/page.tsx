@@ -129,7 +129,7 @@ export default function TableMapPage() {
     return (
       <div className="space-y-4 sm:space-y-6 animate-fade-in">
         <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-36 rounded-xl" />
           ))}
@@ -190,7 +190,7 @@ export default function TableMapPage() {
           description="Add tables from Tables & QR page to see them here"
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {tables.map((table) => {
             const isOccupied = activeOrderTableIds.has(table.id);
             const statusColor = !table.is_active
@@ -235,8 +235,8 @@ export default function TableMapPage() {
       {selectedTable && (
         <>
           <div className="fixed inset-0 bg-black/60 z-50" onClick={() => setSelectedTable(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <GlassCard className="max-w-sm w-full p-6 animate-scale-in relative">
+          <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4">
+            <GlassCard className="w-full sm:max-w-sm sm:w-full h-full sm:h-auto overflow-y-auto p-4 sm:p-6 animate-scale-in relative rounded-none sm:rounded-2xl">
               <button
                 onClick={() => setSelectedTable(null)}
                 className="absolute top-3 right-3 p-2 rounded-lg hover:bg-muted min-w-[44px] min-h-[44px] flex items-center justify-center"

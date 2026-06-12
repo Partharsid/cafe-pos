@@ -59,7 +59,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 overflow-x-hidden">
       <div className="w-full max-w-md">
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center gap-2 mb-2">
@@ -73,7 +73,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-4 mb-4">
+        <div className="flex items-center justify-center gap-1 sm:gap-4 mb-4 flex-wrap">
           <Link
             href="/menu"
             className="text-xs text-muted-foreground hover:text-primary transition-colors"

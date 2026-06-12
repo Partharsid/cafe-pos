@@ -125,7 +125,7 @@ export default function CashierPOSPage() {
   const cartCount = cart.reduce((s, ci) => s + ci.quantity, 0);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)]">
+    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)] overflow-hidden">
       <div className="flex-1 flex flex-col space-y-3 sm:space-y-4 min-w-0">
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <h1 className="text-xl sm:text-2xl font-bold">POS Counter</h1>
@@ -155,12 +155,12 @@ export default function CashierPOSPage() {
           </button>
         </div>
 
-        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
           <button onClick={() => setSelectedCategory(null)}
-            className={`px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap min-h-[36px] ${!selectedCategory ? "bg-primary/20 text-primary border border-primary/30" : "bg-muted text-muted-foreground border border-border"}`}>All</button>
+            className={`px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap min-h-[44px] ${!selectedCategory ? "bg-primary/20 text-primary border border-primary/30" : "bg-muted text-muted-foreground border border-border"}`}>All</button>
           {categories.map((cat) => (
             <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap min-h-[36px] ${selectedCategory === cat.id ? "bg-primary/20 text-primary border border-primary/30" : "bg-muted text-muted-foreground border border-border"}`}>{cat.name}</button>
+              className={`px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap min-h-[44px] ${selectedCategory === cat.id ? "bg-primary/20 text-primary border border-primary/30" : "bg-muted text-muted-foreground border border-border"}`}>{cat.name}</button>
           ))}
         </div>
 
@@ -172,7 +172,7 @@ export default function CashierPOSPage() {
               return (
                 <button key={item.id} onClick={() => inStock && addToCart(item)} disabled={!inStock || !item.is_available}
                   className={`glass-card rounded-xl p-2 sm:p-3 text-left transition-all duration-200 min-h-[44px] ${inStock && item.is_available ? "hover:border-primary/50 cursor-pointer active:scale-95" : "opacity-40 cursor-not-allowed"}`}>
-                  {item.image_url && <div className="h-20 sm:h-24 rounded-lg overflow-hidden mb-2 bg-muted"><img src={item.image_url} alt={item.name} className="w-full h-full object-cover" loading="lazy" /></div>}
+                  {item.image_url && <div className="h-20 sm:h-[120px] rounded-lg overflow-hidden mb-2 bg-muted"><img src={item.image_url} alt={item.name} className="w-full h-full object-cover" loading="lazy" /></div>}
                   <div className="flex items-start justify-between gap-1">
                     <div className="min-w-0">
                       <p className="text-xs sm:text-sm font-semibold truncate">{item.name}</p>
@@ -194,7 +194,7 @@ export default function CashierPOSPage() {
       {showCart && (
         <>
           <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setShowCart(false)} />
-          <div className="fixed inset-x-0 bottom-0 z-50 lg:hidden glass-card rounded-t-2xl max-h-[85vh] flex flex-col">
+          <div className="fixed inset-x-0 bottom-0 z-50 lg:hidden glass-card rounded-t-2xl max-h-[85vh] flex flex-col safe-bottom animate-slide-in-up overflow-hidden overscroll-contain">
             <div className="flex items-center justify-center pt-2 pb-1">
               <button onClick={() => setShowCart(false)} className="p-1 rounded-full hover:bg-muted min-h-[44px] min-w-[44px] flex items-center justify-center"><ChevronUp className="w-5 h-5 text-muted-foreground" /></button>
             </div>
@@ -228,14 +228,14 @@ function CartContent({ cart, getCartTotal, updateQuantity, removeFromCart, clear
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{ci.menuItem.name}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <button onClick={() => updateQuantity(ci.menuItem.id, ci.quantity - 1)} className="p-1.5 rounded bg-muted hover:bg-muted/80 min-w-[36px] min-h-[36px] flex items-center justify-center"><Minus className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => updateQuantity(ci.menuItem.id, ci.quantity - 1)} className="p-1.5 rounded bg-muted hover:bg-muted/80 min-w-[44px] min-h-[44px] flex items-center justify-center"><Minus className="w-3.5 h-3.5" /></button>
                   <span className="text-sm font-semibold w-6 text-center">{ci.quantity}</span>
-                  <button onClick={() => updateQuantity(ci.menuItem.id, ci.quantity + 1)} className="p-1.5 rounded bg-muted hover:bg-muted/80 min-w-[36px] min-h-[36px] flex items-center justify-center"><Plus className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => updateQuantity(ci.menuItem.id, ci.quantity + 1)} className="p-1.5 rounded bg-muted hover:bg-muted/80 min-w-[44px] min-h-[44px] flex items-center justify-center"><Plus className="w-3.5 h-3.5" /></button>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold">₹{(ci.menuItem.price * ci.quantity).toFixed(0)}</p>
-                <button onClick={() => removeFromCart(ci.menuItem.id)} className="text-xs text-destructive mt-0.5"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => removeFromCart(ci.menuItem.id)} className="text-xs text-destructive mt-0.5 min-h-[44px] min-w-[44px] flex items-center justify-end ml-auto"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
           ))

@@ -300,7 +300,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <GlassCard className="p-4 sm:p-6">
           <div className="flex items-center gap-3">
             <div className="p-2 sm:p-2.5 rounded-lg bg-primary/15">
@@ -385,7 +385,7 @@ export default function AnalyticsPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base sm:text-lg font-semibold">Peak Hours</h3>
           </div>
-          <div className="h-40 sm:h-48">
+          <div className="h-40 min-h-[200px] sm:h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats?.peakHours}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -436,7 +436,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
           )}
-          <div className="h-52 sm:h-64">
+          <div className="h-52 min-h-[200px] sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats?.revenueByDay}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -505,7 +505,7 @@ export default function AnalyticsPage() {
           Order Type Breakdown
         </h3>
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
-          <div className="h-40 w-40 sm:h-48 sm:w-48 shrink-0">
+          <div className="h-40 min-h-[200px] sm:h-48 sm:w-48 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -547,7 +547,7 @@ export default function AnalyticsPage() {
           Order Status Breakdown
         </h3>
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
-          <div className="h-40 w-40 sm:h-48 sm:w-48 shrink-0">
+          <div className="h-40 min-h-[200px] sm:h-48 sm:w-48 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

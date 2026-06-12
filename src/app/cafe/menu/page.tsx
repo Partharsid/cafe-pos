@@ -700,7 +700,7 @@ const startEditItem = async (item?: MenuItem) => {
             className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-muted border border-border focus:border-primary outline-none text-sm min-h-[44px]"
           />
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
           <select
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as SortMode)}
@@ -1125,7 +1125,7 @@ const startEditItem = async (item?: MenuItem) => {
           <div className="fixed inset-0 bg-black/60" onClick={() => setShowItemModal(false)} />
           <div
             ref={itemModalRef}
-            className="relative z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-2xl border border-border/20 rounded-t-2xl shadow-2xl animate-slide-in-left"
+            className="relative z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-2xl border border-border/20 rounded-t-2xl shadow-2xl"
             style={{ animation: "slideUp 0.3s ease-out" }}
           >
             <style>{`
